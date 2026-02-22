@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Padding y Margin -->
+    <dimen name="padding_smallest">4dp</dimen>
+    <dimen name="padding_small">8dp</dimen>
+    <dimen name="padding_normal">16dp</dimen>
+    <dimen name="padding_large">24dp</dimen>
+    <dimen name="padding_extra_large">32dp</dimen>
+
+    <!-- Elevación -->
+    <dimen name="elevation_small">2dp</dimen>
+    <dimen name="elevation_normal">4dp</dimen>
+    <dimen name="elevation_large">8dp</dimen>
+
+    <!-- Tamaños de fuente -->
+    <dimen name="text_small">12sp</dimen>
+    <dimen name="text_normal">14sp</dimen>
+    <dimen name="text_large">16sp</dimen>
+    <dimen name="text_extra_large">20sp</dimen>
+    <dimen name="text_heading">24sp</dimen>
+
+    <!-- Alturas de componentes -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="icon_size">24dp</dimen>
+    <dimen name="icon_large">48dp</dimen>
+
+    <!-- Radio de esquinas -->
+    <dimen name="corner_radius_small">4dp</dimen>
+    <dimen name="corner_radius_normal">8dp</dimen>
+    <dimen name="corner_radius_large">16dp</dimen>
+
+</resources>

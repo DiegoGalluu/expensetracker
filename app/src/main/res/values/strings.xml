@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ExpenseTracker</string>
+    
+    <!-- Pantalla Login -->
+    <string name="login_titulo">Gestor de Gastos</string>
+    <string name="login_correo">Correo electrónico</string>
+    <string name="login_contrasena">Contraseña</string>
+    <string name="login_boton">Iniciar sesión</string>
+    <string name="login_error">Error al iniciar sesión</string>
+    
+    <!-- Pantalla Inicio -->
+    <string name="inicio_saldo_total">Saldo total</string>
+    <string name="inicio_ingresos">Ingresos</string>
+    <string name="inicio_gastos">Gastos</string>
+    <string name="inicio_transacciones">Transacciones recientes</string>
+    <string name="inicio_agregar">Agregar transacción</string>
+    
+    <!-- Pantalla Formulario -->
+    <string name="formulario_titulo_nueva">Nueva transacción</string>
+    <string name="formulario_titulo_editar">Editar transacción</string>
+    <string name="formulario_monto">Monto</string>
+    <string name="formulario_categoria">Categoría</string>
+    <string name="formulario_cuenta">Cuenta</string>
+    <string name="formulario_descripcion">Descripción</string>
+    <string name="formulario_fecha">Fecha</string>
+    <string name="formulario_tipo">Tipo de transacción</string>
+    <string name="formulario_guardar">Guardar</string>
+    <string name="formulario_cancelar">Cancelar</string>
+    <string name="formulario_gasto">Gasto</string>
+    <string name="formulario_ingreso">Ingreso</string>
+    
+    <!-- Mensajes generales -->
+    <string name="guardado_exitoso">Guardado exitosamente</string>
+    <string name="error_general">Ocurrió un error</string>
+    <string name="eliminar">Eliminar</string>
+    <string name="editar">Editar</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="cancelar">Cancelar</string>
+    
+</resources>

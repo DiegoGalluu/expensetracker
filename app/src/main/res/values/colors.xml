@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores primarios -->
+    <color name="md_theme_light_primary">#006B5E</color>
+    <color name="md_theme_light_secondary">#4F6359</color>
+    <color name="md_theme_light_tertiary">#386667</color>
+    
+    <!-- Colores oscuros -->
+    <color name="md_theme_dark_primary">#4FDFCF</color>
+    <color name="md_theme_dark_secondary">#C1CCC0</color>
+    <color name="md_theme_dark_tertiary">#A3CFCC</color>
+    
+    <!-- Colores de estado -->
+    <color name="error">#B3261E</color>
+    <color name="success">#2E8B57</color>
+    <color name="warning">#FFA500</color>
+    
+    <!-- Colores para transacciones -->
+    <color name="ingreso">#4CAF50</color>
+    <color name="gasto">#F44336</color>
+    
+    <!-- Colores de categorías -->
+    <color name="categoria_alimentacion">#FF9800</color>
+    <color name="categoria_transporte">#2196F3</color>
+    <color name="categoria_entretenimiento">#9C27B0</color>
+    <color name="categoria_salud">#F44336</color>
+    <color name="categoria_educacion">#3F51B5</color>
+    <color name="categoria_otro">#9E9E9E</color>
+    
+    <!-- Neutros -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="gray">#757575</color>
+    <color name="light_gray">#E0E0E0</color>
+    
+</resources>

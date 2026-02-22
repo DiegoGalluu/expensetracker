@@ -1,0 +1,52 @@
+# --- Gradle / Kotlin ---
+.gradle/
+**/.gradle/
+build/
+**/build/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Android Studio / IntelliJ ---
+.idea/
+*.iml
+*.ipr
+*.iws
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- Logs / profiling / crash dumps ---
+*.log
+*.hprof
+java_pid*.hprof
+hs_err_pid*
+
+# --- Android artifacts ---
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# --- Keystore / signing ---
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Archives / large local exports ---
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# --- Project-specific heavy files ---
+build_output.txt
+expensetracker_completo.tar.gz
