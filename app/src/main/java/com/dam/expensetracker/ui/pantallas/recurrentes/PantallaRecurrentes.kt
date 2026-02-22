@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -66,6 +67,10 @@ fun PantallaRecurrentes(
     var cuentaSeleccionada by remember { mutableStateOf<Cuenta?>(null) }
     var frecuencia by remember { mutableStateOf("MENSUAL") }
     var confirmacionBorradoId by remember { mutableStateOf<Long?>(null) }
+    var recurrenteEnEdicionId by remember { mutableStateOf<Long?>(null) }
+    var mostrarModalNuevaCategoria by remember { mutableStateOf(false) }
+    var nombreNuevaCategoria by remember { mutableStateOf("") }
+    var errorNuevaCategoria by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -128,9 +133,20 @@ fun PantallaRecurrentes(
                     item { Spacer(modifier = Modifier.height(8.dp)) }
 
                     item {
+                        TarjetaResumenFijos(
+                            ingresosFijosMensuales = estadoActual.ingresosFijosMensuales,
+                            gastosFijosMensuales = estadoActual.gastosFijosMensuales
+                        )
+                    }
+
+                    item {
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Crear recurrente", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = if (recurrenteEnEdicionId == null) "Crear recurrente" else "Editar recurrente",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
 
                                 Spacer(modifier = Modifier.height(8.dp))
                                 OutlinedTextField(
@@ -175,7 +191,12 @@ fun PantallaRecurrentes(
                                 SelectorCategoria(
                                     categorias = estadoActual.categorias,
                                     categoriaSeleccionada = categoriaSeleccionada,
-                                    onSeleccion = { categoriaSeleccionada = it }
+                                    onSeleccion = { categoriaSeleccionada = it },
+                                    onNuevaCategoria = {
+                                        mostrarModalNuevaCategoria = true
+                                        nombreNuevaCategoria = ""
+                                        errorNuevaCategoria = null
+                                    }
                                 )
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -188,22 +209,55 @@ fun PantallaRecurrentes(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Button(
                                     onClick = {
-                                        viewModel.crearRecurrente(
-                                            nombre = nombre,
-                                            cantidadTexto = cantidad,
-                                            esGasto = esGasto,
-                                            idCategoria = categoriaSeleccionada?.id,
-                                            idCuenta = cuentaSeleccionada?.id,
-                                            frecuencia = frecuencia,
-                                            nota = nota
-                                        )
+                                        if (recurrenteEnEdicionId == null) {
+                                            viewModel.crearRecurrente(
+                                                nombre = nombre,
+                                                cantidadTexto = cantidad,
+                                                esGasto = esGasto,
+                                                idCategoria = categoriaSeleccionada?.id,
+                                                idCuenta = cuentaSeleccionada?.id,
+                                                frecuencia = frecuencia,
+                                                nota = nota
+                                            )
+                                        } else {
+                                            viewModel.actualizarRecurrente(
+                                                idRecurrente = recurrenteEnEdicionId!!,
+                                                nombre = nombre,
+                                                cantidadTexto = cantidad,
+                                                esGasto = esGasto,
+                                                idCategoria = categoriaSeleccionada?.id,
+                                                idCuenta = cuentaSeleccionada?.id,
+                                                frecuencia = frecuencia,
+                                                nota = nota
+                                            )
+                                        }
                                         nombre = ""
                                         cantidad = ""
                                         nota = ""
+                                        esGasto = true
+                                        frecuencia = "MENSUAL"
+                                        recurrenteEnEdicionId = null
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Crear recurrente")
+                                    Text(if (recurrenteEnEdicionId == null) "Crear recurrente" else "Guardar cambios")
+                                }
+
+                                if (recurrenteEnEdicionId != null) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    TextButton(
+                                        onClick = {
+                                            nombre = ""
+                                            cantidad = ""
+                                            nota = ""
+                                            esGasto = true
+                                            frecuencia = "MENSUAL"
+                                            recurrenteEnEdicionId = null
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Cancelar edición")
+                                    }
                                 }
                             }
                         }
@@ -228,6 +282,16 @@ fun PantallaRecurrentes(
                                 recurrente = recurrente,
                                 nombreCategoria = estadoActual.categorias.find { it.id == recurrente.idCategoria }?.nombre ?: "Sin categoría",
                                 nombreCuenta = estadoActual.cuentas.find { it.id == recurrente.idCuenta }?.nombre ?: "Sin cuenta",
+                                onEditar = {
+                                    nombre = recurrente.nombre
+                                    cantidad = recurrente.cantidad.toString()
+                                    nota = recurrente.nota
+                                    esGasto = recurrente.esGasto
+                                    frecuencia = recurrente.frecuencia
+                                    categoriaSeleccionada = estadoActual.categorias.find { it.id == recurrente.idCategoria }
+                                    cuentaSeleccionada = estadoActual.cuentas.find { it.id == recurrente.idCuenta }
+                                    recurrenteEnEdicionId = recurrente.id
+                                },
                                 onSolicitarBorrado = { confirmacionBorradoId = recurrente.id }
                             )
                         }
@@ -255,6 +319,64 @@ fun PantallaRecurrentes(
                 }
             }
         }
+    }
+
+    if (mostrarModalNuevaCategoria) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarModalNuevaCategoria = false
+                nombreNuevaCategoria = ""
+                errorNuevaCategoria = null
+            },
+            title = { Text("Nueva categoría") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = nombreNuevaCategoria,
+                        onValueChange = {
+                            nombreNuevaCategoria = it
+                            errorNuevaCategoria = null
+                        },
+                        label = { Text("Nombre") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (!errorNuevaCategoria.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorNuevaCategoria.orEmpty(),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.crearCategoriaDesdeSelector(nombreNuevaCategoria) { error ->
+                        if (error == null) {
+                            mostrarModalNuevaCategoria = false
+                            nombreNuevaCategoria = ""
+                            errorNuevaCategoria = null
+                        } else {
+                            errorNuevaCategoria = error
+                        }
+                    }
+                }) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    mostrarModalNuevaCategoria = false
+                    nombreNuevaCategoria = ""
+                    errorNuevaCategoria = null
+                }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -298,7 +420,8 @@ private fun SelectorFrecuencia(
 private fun SelectorCategoria(
     categorias: List<Categoria>,
     categoriaSeleccionada: Categoria?,
-    onSeleccion: (Categoria) -> Unit
+    onSeleccion: (Categoria) -> Unit,
+    onNuevaCategoria: () -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
 
@@ -325,6 +448,14 @@ private fun SelectorCategoria(
                     }
                 )
             }
+
+            DropdownMenuItem(
+                text = { Text("Nueva categoría") },
+                onClick = {
+                    expandido = false
+                    onNuevaCategoria()
+                }
+            )
         }
     }
 }
@@ -370,6 +501,7 @@ private fun TarjetaRecurrente(
     recurrente: RecurringTransaction,
     nombreCategoria: String,
     nombreCuenta: String,
+    onEditar: () -> Unit,
     onSolicitarBorrado: () -> Unit
 ) {
     Card(
@@ -389,6 +521,13 @@ private fun TarjetaRecurrente(
                     modifier = Modifier.weight(1f)
                 )
 
+                IconButton(onClick = onEditar) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar recurrente"
+                    )
+                }
+
                 IconButton(onClick = onSolicitarBorrado) {
                     Icon(
                         imageVector = Icons.Default.Remove,
@@ -403,6 +542,59 @@ private fun TarjetaRecurrente(
             Text(text = "Categoría: $nombreCategoria")
             Text(text = "Cuenta: $nombreCuenta")
             Text(text = "Activo: ${if (recurrente.activo) "Sí" else "No"}")
+        }
+    }
+}
+
+@Composable
+private fun TarjetaResumenFijos(
+    ingresosFijosMensuales: Double,
+    gastosFijosMensuales: Double
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Text(
+                text = "Resumen mensual fijo",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Ingresos fijos mensuales",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = String.format("%.2f€", ingresosFijosMensuales),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Gastos fijos mensuales",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = String.format("%.2f€", gastosFijosMensuales),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
     }
 }

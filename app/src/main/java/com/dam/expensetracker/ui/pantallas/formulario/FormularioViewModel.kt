@@ -81,8 +81,10 @@ class FormularioViewModel(
                     repositorio.obtenerTodasCategorias(),
                     repositorio.obtenerTodasCuentas()
                 ) { categorias, cuentas ->
-                    val categoriasFiltradas = categorias.filterNot {
-                        it.id <= 7 && it.nombre in categoriasPredeterminadasLegacy
+                    val categoriasFiltradas = categorias.filterNot { categoria ->
+                        categoriasPredeterminadasLegacy.any {
+                            it.equals(categoria.nombre.trim(), ignoreCase = true)
+                        }
                     }
                     Pair(categoriasFiltradas, cuentas)
                 }.first().let { (categorias, cuentas) ->
