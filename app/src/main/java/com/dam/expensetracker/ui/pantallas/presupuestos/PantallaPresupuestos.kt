@@ -51,13 +51,21 @@ fun PantallaPresupuestos(
 ) {
     val estado by viewModel.estado.collectAsState()
     val valoresEditados = remember { mutableStateMapOf<Long, String>() }
+    val progresoMetaEditado = remember { mutableStateMapOf<Long, String>() }
     var metaTexto by remember { mutableStateOf("300.0") }
+    var nombrePresupuestoNuevo by remember { mutableStateOf("") }
+    var limitePresupuestoNuevo by remember { mutableStateOf("") }
+    var nombreMetaNueva by remember { mutableStateOf("") }
+    var objetivoMetaNueva by remember { mutableStateOf("") }
 
     LaunchedEffect(estado) {
         val estadoActual = estado
         if (estadoActual is EstadoPresupuestos.Exito) {
             estadoActual.presupuestos.forEach { item ->
                 valoresEditados.putIfAbsent(item.idCategoria, item.limiteMensual.toString())
+            }
+            estadoActual.metasPersonalizadas.forEach { meta ->
+                progresoMetaEditado.putIfAbsent(meta.id, meta.progresoActual.toString())
             }
             metaTexto = estadoActual.metaAhorroMensual.toString()
         }
@@ -120,12 +128,38 @@ fun PantallaPresupuestos(
                     metaTexto = metaTexto,
                     onMetaTextoChange = { metaTexto = it },
                     onGuardarMeta = { viewModel.actualizarMetaAhorroMensual(metaTexto) },
+                    nombrePresupuestoNuevo = nombrePresupuestoNuevo,
+                    limitePresupuestoNuevo = limitePresupuestoNuevo,
+                    onNombrePresupuestoNuevoChange = { nombrePresupuestoNuevo = it },
+                    onLimitePresupuestoNuevoChange = { limitePresupuestoNuevo = it },
+                    onCrearPresupuesto = {
+                        viewModel.crearPresupuestoPersonalizado(nombrePresupuestoNuevo, limitePresupuestoNuevo)
+                        nombrePresupuestoNuevo = ""
+                        limitePresupuestoNuevo = ""
+                    },
                     onGuardarPresupuesto = { idCategoria ->
                         val valor = valoresEditados[idCategoria] ?: "0"
                         viewModel.guardarPresupuestoCategoria(idCategoria, valor)
                     },
                     onLimiteChange = { idCategoria, nuevoValor ->
                         valoresEditados[idCategoria] = nuevoValor
+                    },
+                    nombreMetaNueva = nombreMetaNueva,
+                    objetivoMetaNueva = objetivoMetaNueva,
+                    progresoMetaEditado = progresoMetaEditado,
+                    onNombreMetaNuevaChange = { nombreMetaNueva = it },
+                    onObjetivoMetaNuevaChange = { objetivoMetaNueva = it },
+                    onCrearMetaPersonalizada = {
+                        viewModel.crearMetaPersonalizada(nombreMetaNueva, objetivoMetaNueva)
+                        nombreMetaNueva = ""
+                        objetivoMetaNueva = ""
+                    },
+                    onProgresoMetaChange = { idMeta, texto ->
+                        progresoMetaEditado[idMeta] = texto
+                    },
+                    onGuardarProgresoMeta = { idMeta ->
+                        val valor = progresoMetaEditado[idMeta] ?: "0"
+                        viewModel.actualizarProgresoMeta(idMeta, valor)
                     }
                 )
             }
@@ -139,10 +173,23 @@ private fun ContenidoPresupuestos(
     estado: EstadoPresupuestos.Exito,
     valoresEditados: MutableMap<Long, String>,
     metaTexto: String,
+    nombrePresupuestoNuevo: String,
+    limitePresupuestoNuevo: String,
+    nombreMetaNueva: String,
+    objetivoMetaNueva: String,
+    progresoMetaEditado: MutableMap<Long, String>,
     onMetaTextoChange: (String) -> Unit,
     onGuardarMeta: () -> Unit,
+    onNombrePresupuestoNuevoChange: (String) -> Unit,
+    onLimitePresupuestoNuevoChange: (String) -> Unit,
+    onCrearPresupuesto: () -> Unit,
     onGuardarPresupuesto: (Long) -> Unit,
-    onLimiteChange: (Long, String) -> Unit
+    onLimiteChange: (Long, String) -> Unit,
+    onNombreMetaNuevaChange: (String) -> Unit,
+    onObjetivoMetaNuevaChange: (String) -> Unit,
+    onCrearMetaPersonalizada: () -> Unit,
+    onProgresoMetaChange: (Long, String) -> Unit,
+    onGuardarProgresoMeta: (Long) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -164,24 +211,223 @@ private fun ContenidoPresupuestos(
         }
 
         item {
+            TarjetaCrearMetaPersonalizada(
+                nombreMeta = nombreMetaNueva,
+                objetivoMeta = objetivoMetaNueva,
+                onNombreMetaChange = onNombreMetaNuevaChange,
+                onObjetivoMetaChange = onObjetivoMetaNuevaChange,
+                onCrearMeta = onCrearMetaPersonalizada
+            )
+        }
+
+        if (estado.metasPersonalizadas.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Tus metas personalizadas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            items(estado.metasPersonalizadas, key = { it.id }) { meta ->
+                TarjetaMetaPersonalizada(
+                    meta = meta,
+                    progresoTexto = progresoMetaEditado[meta.id] ?: meta.progresoActual.toString(),
+                    onProgresoChange = { onProgresoMetaChange(meta.id, it) },
+                    onGuardarProgreso = { onGuardarProgresoMeta(meta.id) }
+                )
+            }
+        }
+
+        item {
+            TarjetaCrearPresupuesto(
+                nombre = nombrePresupuestoNuevo,
+                limite = limitePresupuestoNuevo,
+                onNombreChange = onNombrePresupuestoNuevoChange,
+                onLimiteChange = onLimitePresupuestoNuevoChange,
+                onCrear = onCrearPresupuesto
+            )
+        }
+
+        item {
             Text(
-                text = "Presupuesto mensual por categoría",
+                text = "Tus tarjetas de presupuesto",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        items(estado.presupuestos, key = { it.idCategoria }) { item ->
-            val textoLimite = valoresEditados[item.idCategoria] ?: item.limiteMensual.toString()
-            TarjetaPresupuestoCategoria(
-                item = item,
-                limiteTexto = textoLimite,
-                onLimiteChange = { onLimiteChange(item.idCategoria, it) },
-                onGuardar = { onGuardarPresupuesto(item.idCategoria) }
-            )
+        if (estado.presupuestos.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Aún no has creado presupuestos personalizados.",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        } else {
+            items(estado.presupuestos, key = { it.idCategoria }) { item ->
+                val textoLimite = valoresEditados[item.idCategoria] ?: item.limiteMensual.toString()
+                TarjetaPresupuestoCategoria(
+                    item = item,
+                    limiteTexto = textoLimite,
+                    onLimiteChange = { onLimiteChange(item.idCategoria, it) },
+                    onGuardar = { onGuardarPresupuesto(item.idCategoria) }
+                )
+            }
         }
 
         item { Spacer(modifier = Modifier.height(24.dp)) }
+    }
+}
+
+@Composable
+private fun TarjetaCrearMetaPersonalizada(
+    nombreMeta: String,
+    objetivoMeta: String,
+    onNombreMetaChange: (String) -> Unit,
+    onObjetivoMetaChange: (String) -> Unit,
+    onCrearMeta: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Crear meta personalizada",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = nombreMeta,
+                onValueChange = onNombreMetaChange,
+                label = { Text("Nombre de la meta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = objetivoMeta,
+                onValueChange = onObjetivoMetaChange,
+                label = { Text("Objetivo (€)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(onClick = onCrearMeta, modifier = Modifier.fillMaxWidth()) {
+                Text("Crear meta")
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaMetaPersonalizada(
+    meta: MetaPersonalizadaUi,
+    progresoTexto: String,
+    onProgresoChange: (String) -> Unit,
+    onGuardarProgreso: () -> Unit
+) {
+    val progreso = if (meta.objetivo <= 0.0) 0f else (meta.progresoActual / meta.objetivo).toFloat().coerceIn(0f, 1f)
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = meta.nombre,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Objetivo: ${String.format("%.2f€", meta.objetivo)}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Actual: ${String.format("%.2f€", meta.progresoActual)}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LinearProgressIndicator(
+                progress = { progreso },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = progresoTexto,
+                    onValueChange = onProgresoChange,
+                    label = { Text("Nuevo progreso") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+
+                Button(onClick = onGuardarProgreso) {
+                    Text("Guardar")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaCrearPresupuesto(
+    nombre: String,
+    limite: String,
+    onNombreChange: (String) -> Unit,
+    onLimiteChange: (String) -> Unit,
+    onCrear: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Crear presupuesto personalizado",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = nombre,
+                onValueChange = onNombreChange,
+                label = { Text("Nombre de la tarjeta") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = limite,
+                onValueChange = onLimiteChange,
+                label = { Text("Límite mensual (€)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(onClick = onCrear, modifier = Modifier.fillMaxWidth()) {
+                Text("Crear presupuesto")
+            }
+        }
     }
 }
 
