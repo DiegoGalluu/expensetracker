@@ -247,6 +247,7 @@ private fun FormularioContenido(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Cuenta") },
+                placeholder = { Text("Selecciona una cuenta") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandidoCuentas) },
                 modifier = Modifier
                     .fillMaxWidth()

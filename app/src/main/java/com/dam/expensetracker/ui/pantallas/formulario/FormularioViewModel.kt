@@ -74,6 +74,7 @@ class FormularioViewModel(
                 _estado.value = EstadoFormulario.Cargando
 
                 asegurarCategoriaAhorroMensual()
+                asegurarCuentaEfectivo()
                 
                 // Combinar flows de categorías y cuentas
                 combine(
@@ -130,6 +131,17 @@ class FormularioViewModel(
                     nombre = "Ahorro mensual",
                     color = "#2E7D32"
                 )
+            )
+        }
+    }
+
+    private suspend fun asegurarCuentaEfectivo() {
+        val cuentas = repositorio.obtenerTodasCuentas().first()
+        val existeEfectivo = cuentas.any { it.nombre.equals("Efectivo", ignoreCase = true) }
+
+        if (!existeEfectivo) {
+            repositorio.insertarCuenta(
+                Cuenta(nombre = "Efectivo")
             )
         }
     }

@@ -11,6 +11,8 @@ import com.dam.expensetracker.datos.repositorios.RepositorioDivisas
 import com.dam.expensetracker.datos.repositorios.RepositorioFinanzas
 import com.dam.expensetracker.ui.pantallas.detalle.DetalleViewModel
 import com.dam.expensetracker.ui.pantallas.detalle.PantallaDetalle
+import com.dam.expensetracker.ui.pantallas.cuentas.CuentasViewModel
+import com.dam.expensetracker.ui.pantallas.cuentas.PantallaCuentas
 import com.dam.expensetracker.ui.pantallas.formulario.FormularioViewModel
 import com.dam.expensetracker.ui.pantallas.formulario.PantallaFormulario
 import com.dam.expensetracker.ui.pantallas.inicio.InicioViewModel
@@ -28,6 +30,7 @@ sealed class Ruta(val ruta: String) {
     object Inicio : Ruta("inicio")
     object Metas : Ruta("metas")
     object Presupuestos : Ruta("presupuestos")
+    object Cuentas : Ruta("cuentas")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -84,6 +87,9 @@ fun NavegacionApp(
                 onNavegarPresupuestos = {
                     navController.navigate(Ruta.Presupuestos.ruta)
                 },
+                onNavegarCuentas = {
+                    navController.navigate(Ruta.Cuentas.ruta)
+                },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
                         popUpTo(Ruta.Inicio.ruta) { inclusive = true }
@@ -118,6 +124,19 @@ fun NavegacionApp(
             PantallaPresupuestos(
                 onNavegarAtras = { navController.popBackStack() },
                 modo = ModoPresupuestos.PRESUPUESTOS,
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Cuentas.ruta) {
+            val viewModel: CuentasViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    CuentasViewModel(repositorioFinanzas)
+                }
+            )
+
+            PantallaCuentas(
+                onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )
         }

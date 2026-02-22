@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
@@ -34,6 +35,7 @@ fun PantallaInicio(
     onNavegarFormulario: () -> Unit,
     onNavegarMetas: () -> Unit,
     onNavegarPresupuestos: () -> Unit,
+    onNavegarCuentas: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
@@ -104,6 +106,21 @@ fun PantallaInicio(
                             Icon(
                                 imageVector = Icons.Default.Assessment,
                                 contentDescription = "Presupuestos"
+                            )
+                        }
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Cuentas") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarCuentas()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.CreditCard,
+                                contentDescription = "Cuentas"
                             )
                         }
                     )
