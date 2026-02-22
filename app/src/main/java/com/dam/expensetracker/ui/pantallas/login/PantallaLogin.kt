@@ -26,8 +26,24 @@ fun PantallaLogin(
 ) {
     val context = LocalContext.current
     val gestorAuth = remember { GestorAuth(context) }
+    var comprobandoSesion by remember { mutableStateOf(true) }
     
     val estado by viewModel.estado.collectAsState()
+
+    LaunchedEffect(Unit) {
+        gestorAuth.recuperarSesionGuardada(
+            onExito = { email ->
+                comprobandoSesion = false
+                viewModel.onLoginExitoso(email)
+            },
+            onNoSesion = {
+                comprobandoSesion = false
+            },
+            onError = {
+                comprobandoSesion = false
+            }
+        )
+    }
     
     // Navegar cuando el login sea exitoso
     LaunchedEffect(estado) {
@@ -83,8 +99,8 @@ fun PantallaLogin(
             Spacer(modifier = Modifier.height(64.dp))
             
             // Botón de login
-            when (estado) {
-                is EstadoLogin.Cargando -> {
+            when {
+                comprobandoSesion || estado is EstadoLogin.Cargando -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = MaterialTheme.colorScheme.primary
@@ -125,35 +141,6 @@ fun PantallaLogin(
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Nota informativa
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Nota importante:",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = "Este proyecto usa valores de Auth0 de ejemplo. Para usar la app, debes configurar tus propias credenciales de Auth0 en la clase GestorAuth.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

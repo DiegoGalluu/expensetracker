@@ -1,9 +1,13 @@
 package com.dam.expensetracker.utilidades
 
+import android.app.Activity
 import android.content.Context
 import com.auth0.android.Auth0
 import com.auth0.android.authentication.AuthenticationAPIClient
 import com.auth0.android.authentication.AuthenticationException
+import com.auth0.android.authentication.storage.CredentialsManager
+import com.auth0.android.authentication.storage.CredentialsManagerException
+import com.auth0.android.authentication.storage.SharedPreferencesStorage
 import com.auth0.android.callback.Callback
 import com.auth0.android.provider.WebAuthProvider
 import com.auth0.android.result.Credentials
@@ -29,6 +33,11 @@ class GestorAuth(private val context: Context) {
     private val cuenta = Auth0(CLIENT_ID, DOMINIO)
     private val SCHEME = "com.dam.expensetracker"
     private var credencialesActuales: Credentials? = null
+    private val preferencias = context.getSharedPreferences("auth_session", Context.MODE_PRIVATE)
+    private val gestorCredenciales = CredentialsManager(
+        AuthenticationAPIClient(cuenta),
+        SharedPreferencesStorage(context)
+    )
     
     /**
      * Inicia el flujo de login con Auth0
@@ -38,12 +47,19 @@ class GestorAuth(private val context: Context) {
         onExito: (String) -> Unit,  // Devuelve el email del usuario
         onError: (String) -> Unit
     ) {
+        val activity = context as? Activity
+        if (activity == null) {
+            onError("No se pudo iniciar Auth0 desde este contexto")
+            return
+        }
+
         WebAuthProvider.login(cuenta)
             .withScheme(SCHEME)
-            .start(context as android.app.Activity, object : Callback<Credentials, AuthenticationException> {
+            .start(activity, object : Callback<Credentials, AuthenticationException> {
                 override fun onSuccess(credentials: Credentials) {
                     // Guardamos las credenciales
                     credencialesActuales = credentials
+                    gestorCredenciales.saveCredentials(credentials)
                     
                     // Obtenemos información del usuario
                     val client = AuthenticationAPIClient(cuenta)
@@ -52,6 +68,7 @@ class GestorAuth(private val context: Context) {
                             override fun onSuccess(profile: com.auth0.android.result.UserProfile) {
                                 // Devolvemos el email del usuario
                                 val email = profile.email ?: "usuario@ejemplo.com"
+                                preferencias.edit().putString("email_usuario", email).apply()
                                 onExito(email)
                             }
                             
@@ -74,11 +91,19 @@ class GestorAuth(private val context: Context) {
         onExito: () -> Unit,
         onError: (String) -> Unit
     ) {
+        val activity = context as? Activity
+        if (activity == null) {
+            onError("No se pudo cerrar sesión desde este contexto")
+            return
+        }
+
         WebAuthProvider.logout(cuenta)
             .withScheme(SCHEME)
-            .start(context as android.app.Activity, object : Callback<Void?, AuthenticationException> {
+            .start(activity, object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(payload: Void?) {
                     credencialesActuales = null
+                    gestorCredenciales.clearCredentials()
+                    preferencias.edit().remove("email_usuario").apply()
                     onExito()
                 }
                 
@@ -92,7 +117,7 @@ class GestorAuth(private val context: Context) {
      * Verifica si el usuario está autenticado
      */
     fun estaAutenticado(): Boolean {
-        return credencialesActuales != null
+        return credencialesActuales != null || gestorCredenciales.hasValidCredentials()
     }
     
     /**
@@ -100,5 +125,46 @@ class GestorAuth(private val context: Context) {
      */
     fun obtenerToken(): String? {
         return credencialesActuales?.accessToken
+    }
+
+    fun recuperarSesionGuardada(
+        onExito: (String) -> Unit,
+        onNoSesion: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (!gestorCredenciales.hasValidCredentials()) {
+            onNoSesion()
+            return
+        }
+
+        gestorCredenciales.getCredentials(object : Callback<Credentials, CredentialsManagerException> {
+            override fun onSuccess(result: Credentials) {
+                credencialesActuales = result
+
+                val emailGuardado = preferencias.getString("email_usuario", null)
+                if (!emailGuardado.isNullOrBlank()) {
+                    onExito(emailGuardado)
+                    return
+                }
+
+                val client = AuthenticationAPIClient(cuenta)
+                client.userInfo(result.accessToken)
+                    .start(object : Callback<com.auth0.android.result.UserProfile, AuthenticationException> {
+                        override fun onSuccess(profile: com.auth0.android.result.UserProfile) {
+                            val email = profile.email ?: "usuario@ejemplo.com"
+                            preferencias.edit().putString("email_usuario", email).apply()
+                            onExito(email)
+                        }
+
+                        override fun onFailure(error: AuthenticationException) {
+                            onError("No se pudo recuperar el perfil de usuario")
+                        }
+                    })
+            }
+
+            override fun onFailure(error: CredentialsManagerException) {
+                onNoSesion()
+            }
+        })
     }
 }
