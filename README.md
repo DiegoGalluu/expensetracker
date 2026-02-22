@@ -1,222 +1,119 @@
-# ExpenseTracker - Gestor de Finanzas Personales
+# ExpenseTracker
 
-## Descripción
+ExpenseTracker es una app Android para llevar tus finanzas personales de forma simple: anotas ingresos y gastos, organizas por categorías/cuentas y ves un resumen claro de cómo va tu mes.
 
-ExpenseTracker es una aplicación Android nativa desarrollada como proyecto final del módulo de Programación Multimedia y Dispositivos Móviles (PMDM) y Programación de Servicios y Procesos (PSP). La aplicación permite a los usuarios gestionar sus finanzas personales de manera sencilla, registrando gastos e ingresos, organizándolos por categorías, estableciendo presupuestos y visualizando resúmenes mediante gráficos.
+Este README está pensado para entender **cómo se usa la app** y cuál es su flujo principal, sin entrar en detalles técnicos innecesarios.
 
-## Tecnologías Utilizadas
+---
 
-### Frontend
-- Jetpack Compose - UI moderna y declarativa
-- Material Design 3 - Sistema de diseño
-- Navigation Compose - Navegación entre pantallas
-- Kotlin - Lenguaje de programación
+## ¿Qué puedes hacer en la app?
 
-### Arquitectura
-- MVVM (Model-View-ViewModel) - Patrón arquitectónico
-- Repository Pattern - Abstracción de fuentes de datos
-- StateFlow - Gestión reactiva del estado
-- Coroutines - Programación asíncrona
+- Iniciar sesión con Auth0 y mantener sesión activa.
+- Registrar transacciones (gasto o ingreso).
+- Editar y borrar movimientos.
+- Gestionar categorías personalizadas y cuentas.
+- Definir metas y presupuestos.
+- Configurar transacciones recurrentes.
+- Consultar conversión de divisas.
+- Ver movimientos de una API bancaria simulada.
+- Exportar tus datos a CSV o PDF.
 
-### Persistencia
-- Room Database - ORM para base de datos local
-- SQLite - Motor de base de datos
+---
 
-### Servicios Remotos
-- Retrofit2 - Cliente HTTP para consumo de APIs
-- Gson - Serialización y deserialización JSON
-- OkHttp - Cliente HTTP subyacente
+## Flujo de uso (paso a paso)
 
-### Autenticación
-- Auth0 - Sistema de autenticación y gestión de identidad
+### 1) Login
+Al abrir la app, entras por la pantalla de inicio de sesión.
 
-## Estructura del Proyecto
+- Si ya había sesión válida, la app entra directamente.
+- Si no, inicias sesión con Auth0.
 
-```
-app/src/main/java/com/dam/expensetracker/
-├── datos/
-│   ├── local/
-│   │   ├── entidades/          # Entidades de Room (Transaccion, Categoria, Cuenta, Presupuesto)
-│   │   ├── dao/                # DAOs para operaciones CRUD
-│   │   └── base/               # BaseDatosFinanzas (clase principal de Room)
-│   ├── remoto/
-│   │   ├── api/                # Interfaces de Retrofit (ApiDivisas)
-│   │   └── dto/                # Objetos de transferencia de datos
-│   └── repositorios/           # Repositorios que abstraen los datos
-├── ui/
-│   ├── pantallas/
-│   │   ├── login/              # Pantalla de login con Auth0
-│   │   ├── inicio/             # Dashboard principal
-│   │   ├── detalle/            # Detalle de transacción
-│   │   └── formulario/         # Formulario crear/editar transacción
-│   ├── componentes/            # Componentes reutilizables (botones, tarjetas, gráficos)
-│   ├── navegacion/             # Sistema de navegación con NavHost
-│   └── tema/                   # Colores, tipografía y tema de la app
-├── utilidades/                 # Clases de utilidad (GestorAuth, Constantes)
-└── MainActivity.kt             # Actividad principal
-```
+### 2) Pantalla principal (Inicio)
+Después del login llegas al dashboard:
 
-## Cumplimiento de Requisitos
+- Saldo total.
+- Gastos del mes.
+- Gráfico por categorías.
+- Lista de transacciones recientes.
 
-### Jetpack Compose (RA3 PMDM)
-- UI 100% en Compose sin XML
-- Navegación con Navigation Compose
-- 4 pantallas principales: Login, Inicio, Detalle, Formulario
-- Estados reactivos con StateFlow
-- Componentes reutilizables (BotonPrincipal, TarjetaTransaccion, GraficoCircular)
-- Tema personalizado con Material Design 3
-- Listas con LazyColumn
-- Formularios con validación
+Desde aquí puedes abrir el menú lateral para acceder al resto de apartados.
 
-### Arquitectura MVVM (RA4 PMDM)
-- Separación clara de capas: View (Composables), ViewModel, Repository
-- ViewModels con StateFlow para exponer estado
-- Repository pattern para abstraer fuentes de datos
-- Manejo correcto del ciclo de vida
-- Uso de Coroutines para operaciones asíncronas
+### 3) Crear una transacción
+Con el botón `+` creas un movimiento nuevo:
 
-### Persistencia con Room (RA5 PMDM)
-- 4 entidades: Transaccion, Categoria, Cuenta, Presupuesto
-- DAOs con operaciones CRUD completas
-- Uso de Flow para observar cambios
-- Consultas @Query con filtrado por categoría y mes
-- Relaciones entre entidades con ForeignKey
-- Datos iniciales precargados
+- Eliges si es gasto o ingreso.
+- Indicas cantidad, categoría, cuenta y nota.
+- Guardas y vuelves al inicio.
 
-### Retrofit2 (RA4 PSP)
-- Integración con API pública de tipos de cambio (exchangerate-api.com)
-- 2 endpoints: obtener tipos de cambio base y tipos del dólar
-- Serialización JSON con Gson
-- Manejo de errores con try-catch
-- DTOs para mapear respuestas
-- Estados de UI: cargando, éxito, error
+Extra útil: en el selector de categoría puedes crear una nueva categoría al momento, sin salir del formulario.
 
-### Auth0 (RA5 PSP)
-- Pantalla de login con botón de Auth0
-- Manejo de tokens y credenciales
-- Logout funcional
-- Protección de pantallas principales
-- Muestra del email del usuario autenticado
-- Callback handling para OAuth
+### 4) Revisar y editar
+Desde la lista puedes entrar al detalle de una transacción para:
 
-## Instalación y Ejecución
+- Ver la información completa.
+- Editar datos.
+- Eliminar el registro.
 
-### Requisitos Previos
-- Android Studio Hedgehog o superior
-- JDK 17
-- SDK mínimo: Android 7.0 (API 24)
-- SDK objetivo: Android 14 (API 34)
+### 5) Menú lateral (funciones principales)
+En el drawer tienes acceso a:
 
-### Pasos de Instalación
+- **Metas**: objetivos económicos.
+- **Presupuestos**: límites de gasto por categoría.
+- **Cuentas**: gestión de cuentas (efectivo, banco, etc.).
+- **Recurrentes**: cargos/ingresos automáticos con frecuencia.
+- **Divisas**: conversión con tipo de cambio actualizado.
+- **Banco**: visualización de movimientos de API simulada.
+- **Exportar**: generación de CSV y PDF.
 
-1. Clonar el repositorio:
-```bash
-git clone https://github.com/tu-usuario/expensetracker.git
-cd expensetracker
-```
+---
 
-2. Abrir el proyecto en Android Studio:
-   - File > Open
-   - Seleccionar la carpeta del proyecto
-   - Esperar a que Gradle sincronice las dependencias
+## Recurrentes: cómo funciona
 
-3. Configurar Auth0:
-   - Crear una cuenta gratuita en https://auth0.com
-   - Crear una aplicación de tipo "Native"
-   - Copiar el Domain y Client ID
-   - Abrir el archivo `GestorAuth.kt`
-   - Reemplazar los valores de ejemplo:
-     ```kotlin
-     private val DOMINIO = "tu-dominio.eu.auth0.com"
-     private val CLIENT_ID = "tu_client_id_aqui"
-     ```
-   - En el dashboard de Auth0, configurar:
-     - Callback URLs: `com.dam.expensetracker://tu-dominio.auth0.com/android/com.dam.expensetracker/callback`
-     - Logout URLs: `com.dam.expensetracker://tu-dominio.auth0.com/android/com.dam.expensetracker/callback`
+La sección de recurrentes permite preparar movimientos que se repiten (por ejemplo, alquiler, nómina, suscripciones):
 
-4. Ejecutar la aplicación:
-   - Conectar un dispositivo Android o iniciar un emulador
-   - Click en el botón Run (triángulo verde)
-   - La app se instalará y abrirá automáticamente
+- Puedes crear, editar y eliminar recurrentes.
+- Puedes marcar cada recurrente como activo o inactivo.
+- Ves un resumen mensual de ingresos fijos y gastos fijos.
+- También puedes crear una categoría nueva desde su propio selector.
 
-### Nota sobre las APIs
+---
 
-La aplicación utiliza la API pública de tipos de cambio https://api.exchangerate-api.com que no requiere API key. Si la API no está disponible, la funcionalidad de conversión de divisas simplemente no mostrará datos, pero el resto de la aplicación funcionará normalmente.
+## Sesión y datos por usuario
 
-## Funcionalidades Principales
+La app cierra sesión desde el botón junto al email en el menú lateral.
 
-### Gestión de Transacciones
-- Registrar gastos e ingresos con cantidad, categoría, cuenta y nota
-- Editar transacciones existentes
-- Eliminar transacciones con confirmación
-- Ver listado completo de transacciones ordenadas por fecha
+Además, los datos locales están separados por usuario: si entra una cuenta nueva, ve su propio espacio de datos (no se mezclan con otra sesión).
 
-### Categorías y Cuentas
-- 7 categorías predefinidas con colores: Comida, Transporte, Ocio, Salud, Vivienda, Educación, Otros
-- 2 cuentas por defecto: Efectivo y Banco
-- Presupuestos mensuales de 500€ por categoría (configurables)
+---
 
-### Resumen Financiero
-- Cálculo automático del saldo total (ingresos - gastos)
-- Total de gastos del mes actual
-- Gráfico circular mostrando distribución de gastos por categoría
-- Indicadores visuales diferenciando gastos (rojo) e ingresos (verde)
+## Exportación de datos
 
-### Conversión de Divisas
-- Consulta de tipos de cambio actuales (EUR, USD, etc.)
-- Actualización automática desde API externa
-- Manejo de errores cuando no hay conexión
+En la sección **Exportar** puedes generar:
 
-## Problemas Conocidos y Soluciones
+- **CSV**: útil para hojas de cálculo.
+- **PDF**: útil para compartir o archivar.
 
-### Auth0
-Si el login de Auth0 no funciona, verificar:
-- Las credenciales están correctamente configuradas en `GestorAuth.kt`
-- Las URLs de callback están configuradas en el dashboard de Auth0
-- El dispositivo/emulador tiene conexión a Internet
+Los archivos se guardan en Documents para que sea fácil localizarlos.
 
-### Base de Datos
-Si la app se cierra al iniciar:
-- Desinstalar la app del dispositivo
-- Volver a ejecutar desde Android Studio
-- Room recreará la base de datos limpia
+---
 
-### API de Divisas
-Si los tipos de cambio no se muestran:
-- Verificar conexión a Internet
-- La funcionalidad es opcional y no afecta el resto de la app
+## Requisitos para ejecutar
 
-## Decisiones de Diseño
+- Android Studio.
+- Dispositivo/emulador Android (API 24 o superior).
+- Configuración de Auth0 válida (dominio y client ID).
+- Conexión a internet para login y funciones de APIs remotas.
 
-### Por qué MVVM sin Hilt
-Se decidió no utilizar Hilt (inyección de dependencias) para mantener el código más sencillo y comprensible para un alumno de DAM. Se crearon factories manuales para los ViewModels que, aunque más verbosas, son más fáciles de entender.
+---
 
-### Repositorio Único vs Múltiples
-Se usó un único `RepositorioFinanzas` que agrupa todos los DAOs en lugar de un repositorio por entidad. Esto simplifica la arquitectura sin perder funcionalidad.
+## Resumen rápido
 
-### Gráfico Personalizado
-Se implementó un gráfico circular simple con Canvas en lugar de usar librerías externas pesadas. Esto reduce dependencias y muestra dominio de Compose.
+ExpenseTracker está pensada para que el flujo diario sea directo:
 
-### Datos Iniciales
-La base de datos se puebla automáticamente con categorías, cuentas y presupuestos por defecto en el primer inicio. Esto mejora la experiencia del usuario que puede probar la app inmediatamente.
+1. Entras.
+2. Registras movimientos.
+3. Controlas presupuesto y recurrentes.
+4. Revisas resumen.
+5. Exportas cuando lo necesites.
 
-## Mejoras Futuras
-
-Si se dispusiera de más tiempo, se podrían implementar:
-- Filtros avanzados de transacciones por fecha, categoría, cuenta
-- Exportación de datos a CSV o PDF
-- Recordatorios para pagos recurrentes
-- Soporte para múltiples idiomas
-- Modo oscuro automático según hora del día
-- Sincronización en la nube
-- Notificaciones cuando se excede un presupuesto
-
-## Créditos
-
-Proyecto realizado por un alumno de 2º de Desarrollo de Aplicaciones Multiplataforma (DAM) como parte de la evaluación de los módulos PMDM y PSP del segundo trimestre.
-
-Curso: 2025-2026
-
-## Licencia
-
-Este proyecto es de uso educativo. Se permite su uso, modificación y distribución con fines académicos.
+Si quieres ampliar la app, el siguiente paso natural sería añadir filtros avanzados por fechas/categorías o estadísticas históricas comparativas por meses.
