@@ -47,7 +47,7 @@ class PresupuestosViewModel(
     val estado: StateFlow<EstadoPresupuestos> = _estado.asStateFlow()
 
     private val _metaAhorroMensual = MutableStateFlow(300.0)
-    private val _metasPersonalizadas = MutableStateFlow<List<MetaPersonalizadaUi>>(emptyList())
+    private val _estadoMetasPersonalizadas = MutableStateFlow<List<MetaPersonalizadaUi>>(emptyList())
 
     private val categoriasBase = setOf(
         "Comida", "Transporte", "Ocio", "Salud", "Vivienda", "Educación", "Otros"
@@ -65,14 +65,14 @@ class PresupuestosViewModel(
                     repositorio.obtenerTodosPresupuestos(),
                     repositorio.obtenerTodasTransacciones(),
                     _metaAhorroMensual,
-                    _metasPersonalizadas
-                ) { categorias, presupuestos, transacciones, metaAhorro, metasPersonalizadas ->
+                    _estadoMetasPersonalizadas
+                ) { categorias, presupuestos, transacciones, metaAhorro, estadoMetasPersonalizadas ->
                     construirEstado(
                         categorias = categorias,
                         presupuestos = presupuestos,
                         transacciones = transacciones,
                         metaAhorro = metaAhorro,
-                        metasPersonalizadas = metasPersonalizadas
+                        estadoMetasPersonalizadas = estadoMetasPersonalizadas
                     )
                 }.collect { nuevoEstado ->
                     _estado.value = nuevoEstado
@@ -163,22 +163,33 @@ class PresupuestosViewModel(
     }
 
     fun crearMetaPersonalizada(nombre: String, objetivoTexto: String) {
-        val nombreNormalizado = nombre.trim()
-        val objetivo = objetivoTexto.trim().replace(',', '.').toDoubleOrNull()
+        viewModelScope.launch {
+            val nombreNormalizado = nombre.trim()
+            val objetivo = objetivoTexto.trim().replace(',', '.').toDoubleOrNull()
 
-        if (nombreNormalizado.isBlank() || objetivo == null || objetivo <= 0) {
-            _estado.value = EstadoPresupuestos.Error("La meta debe tener nombre y objetivo válido")
-            return
+            if (nombreNormalizado.isBlank() || objetivo == null || objetivo <= 0) {
+                _estado.value = EstadoPresupuestos.Error("La meta debe tener nombre y objetivo válido")
+                return@launch
+            }
+
+            try {
+                val categoriaId = repositorio.insertarCategoria(
+                    Categoria(
+                        nombre = nombreNormalizado,
+                        color = colorAleatorioHex()
+                    )
+                )
+
+                _estadoMetasPersonalizadas.value = _estadoMetasPersonalizadas.value + MetaPersonalizadaUi(
+                    id = categoriaId,
+                    nombre = nombreNormalizado,
+                    objetivo = objetivo,
+                    progresoActual = 0.0
+                )
+            } catch (e: Exception) {
+                _estado.value = EstadoPresupuestos.Error("No se pudo crear la meta: ${e.message}")
+            }
         }
-
-        val nuevaMeta = MetaPersonalizadaUi(
-            id = System.currentTimeMillis(),
-            nombre = nombreNormalizado,
-            objetivo = objetivo,
-            progresoActual = 0.0
-        )
-
-        _metasPersonalizadas.value = _metasPersonalizadas.value + nuevaMeta
     }
 
     fun actualizarProgresoMeta(idMeta: Long, progresoTexto: String) {
@@ -189,7 +200,7 @@ class PresupuestosViewModel(
             return
         }
 
-        _metasPersonalizadas.value = _metasPersonalizadas.value.map {
+        _estadoMetasPersonalizadas.value = _estadoMetasPersonalizadas.value.map {
             if (it.id == idMeta) it.copy(progresoActual = progreso) else it
         }
     }
@@ -199,7 +210,7 @@ class PresupuestosViewModel(
         presupuestos: List<Presupuesto>,
         transacciones: List<Transaccion>,
         metaAhorro: Double,
-        metasPersonalizadas: List<MetaPersonalizadaUi>
+        estadoMetasPersonalizadas: List<MetaPersonalizadaUi>
     ): EstadoPresupuestos {
         val (inicioMes, finMes) = rangoMesActual()
 
@@ -221,6 +232,20 @@ class PresupuestosViewModel(
                 gastoMesActual = gastosPorCategoria[categoria.id] ?: 0.0
             )
         }.sortedBy { it.nombreCategoria }
+
+        val categoriasConPresupuesto = presupuestos.map { it.idCategoria }.toSet()
+        val metasPersonalizadas = categorias
+            .filter { it.nombre !in categoriasBase && it.id !in categoriasConPresupuesto }
+            .map { categoria ->
+                val metaEstado = estadoMetasPersonalizadas.find { it.id == categoria.id }
+                MetaPersonalizadaUi(
+                    id = categoria.id,
+                    nombre = categoria.nombre,
+                    objetivo = metaEstado?.objetivo ?: 100.0,
+                    progresoActual = metaEstado?.progresoActual ?: 0.0
+                )
+            }
+            .sortedBy { it.nombre }
 
         val ingresosMes = transaccionesMes
             .filter { !it.esGasto }

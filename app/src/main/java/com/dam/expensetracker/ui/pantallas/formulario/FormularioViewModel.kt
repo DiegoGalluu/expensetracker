@@ -92,8 +92,8 @@ class FormularioViewModel(
                         
                         trans
                     } else {
-                        // Modo crear: seleccionar primera categoría y cuenta por defecto
-                        _categoriaSeleccionada.value = categorias.firstOrNull()
+                        // Modo crear: categoría sin seleccionar para forzar selección explícita
+                        _categoriaSeleccionada.value = null
                         _cuentaSeleccionada.value = cuentas.firstOrNull()
                         null
                     }

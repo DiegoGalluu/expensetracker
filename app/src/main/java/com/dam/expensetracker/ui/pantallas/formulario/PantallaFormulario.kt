@@ -214,6 +214,7 @@ private fun FormularioContenido(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Categoría") },
+                placeholder = { Text("Selecciona una categoría") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandidoCategorias) },
                 modifier = Modifier
                     .fillMaxWidth()
