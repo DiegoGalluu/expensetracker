@@ -74,15 +74,9 @@ abstract class BaseDatosFinanzas : RoomDatabase() {
             val cuentaDao = database.cuentaDao()
             val presupuestoDao = database.presupuestoDao()
             
-            // Categorías por defecto con colores
+            // Única categoría predeterminada
             val categorias = listOf(
-                Categoria(nombre = "Comida", color = "#FF5722"),
-                Categoria(nombre = "Transporte", color = "#2196F3"),
-                Categoria(nombre = "Ocio", color = "#4CAF50"),
-                Categoria(nombre = "Salud", color = "#F44336"),
-                Categoria(nombre = "Vivienda", color = "#9C27B0"),
-                Categoria(nombre = "Educación", color = "#FF9800"),
-                Categoria(nombre = "Otros", color = "#757575")
+                Categoria(nombre = "Ahorro mensual", color = "#2E7D32")
             )
             
             categorias.forEach { categoria ->

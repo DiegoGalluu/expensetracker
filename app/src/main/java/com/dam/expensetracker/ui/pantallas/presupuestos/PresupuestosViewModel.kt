@@ -50,7 +50,7 @@ class PresupuestosViewModel(
     private val _estadoMetasPersonalizadas = MutableStateFlow<List<MetaPersonalizadaUi>>(emptyList())
 
     private val categoriasBase = setOf(
-        "Comida", "Transporte", "Ocio", "Salud", "Vivienda", "Educación", "Otros"
+        "Ahorro mensual", "Comida", "Transporte", "Ocio", "Salud", "Vivienda", "Educación", "Otros"
     )
 
     init {

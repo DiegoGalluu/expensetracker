@@ -36,6 +36,10 @@ sealed class EstadoFormulario {
 class FormularioViewModel(
     private val repositorio: RepositorioFinanzas
 ) : ViewModel() {
+
+    private val categoriasPredeterminadasLegacy = setOf(
+        "Comida", "Transporte", "Ocio", "Salud", "Vivienda", "Educación", "Otros"
+    )
     
     private val _estado = MutableStateFlow<EstadoFormulario>(EstadoFormulario.Inicial)
     val estado: StateFlow<EstadoFormulario> = _estado.asStateFlow()
@@ -74,7 +78,10 @@ class FormularioViewModel(
                     repositorio.obtenerTodasCategorias(),
                     repositorio.obtenerTodasCuentas()
                 ) { categorias, cuentas ->
-                    Pair(categorias, cuentas)
+                    val categoriasFiltradas = categorias.filterNot {
+                        it.id <= 7 && it.nombre in categoriasPredeterminadasLegacy
+                    }
+                    Pair(categoriasFiltradas, cuentas)
                 }.first().let { (categorias, cuentas) ->
                     
                     // Si hay un ID, cargar la transacción existente
