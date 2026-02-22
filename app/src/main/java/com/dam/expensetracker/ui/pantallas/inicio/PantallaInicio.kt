@@ -28,6 +28,7 @@ import com.dam.expensetracker.ui.componentes.TarjetaTransaccion
 fun PantallaInicio(
     onNavegarDetalle: (Long) -> Unit,
     onNavegarFormulario: () -> Unit,
+    onNavegarPresupuestos: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
@@ -48,6 +49,13 @@ fun PantallaInicio(
                     }
                 },
                 actions = {
+                    TextButton(onClick = onNavegarPresupuestos) {
+                        Text(
+                            text = "Metas",
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+
                     IconButton(onClick = onCerrarSesion) {
                         Icon(
                             imageVector = Icons.Default.ExitToApp,

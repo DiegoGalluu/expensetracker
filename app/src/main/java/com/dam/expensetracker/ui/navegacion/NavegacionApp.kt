@@ -16,6 +16,8 @@ import com.dam.expensetracker.ui.pantallas.formulario.PantallaFormulario
 import com.dam.expensetracker.ui.pantallas.inicio.InicioViewModel
 import com.dam.expensetracker.ui.pantallas.inicio.PantallaInicio
 import com.dam.expensetracker.ui.pantallas.login.PantallaLogin
+import com.dam.expensetracker.ui.pantallas.presupuestos.PantallaPresupuestos
+import com.dam.expensetracker.ui.pantallas.presupuestos.PresupuestosViewModel
 
 /**
  * Rutas de navegación de la aplicación
@@ -23,6 +25,7 @@ import com.dam.expensetracker.ui.pantallas.login.PantallaLogin
 sealed class Ruta(val ruta: String) {
     object Login : Ruta("login")
     object Inicio : Ruta("inicio")
+    object Presupuestos : Ruta("presupuestos")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -75,12 +78,28 @@ fun NavegacionApp(
                 onNavegarFormulario = {
                     navController.navigate(Ruta.Formulario.crearRuta())
                 },
+                onNavegarPresupuestos = {
+                    navController.navigate(Ruta.Presupuestos.ruta)
+                },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
                         popUpTo(Ruta.Inicio.ruta) { inclusive = true }
                     }
                 },
                 emailUsuario = emailUsuario,
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Presupuestos.ruta) {
+            val viewModel: PresupuestosViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    PresupuestosViewModel(repositorioFinanzas)
+                }
+            )
+
+            PantallaPresupuestos(
+                onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )
         }
