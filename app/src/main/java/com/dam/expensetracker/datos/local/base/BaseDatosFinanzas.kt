@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.dam.expensetracker.datos.local.dao.*
 import com.dam.expensetracker.datos.local.entidades.*
@@ -19,9 +20,10 @@ import kotlinx.coroutines.launch
         Transaccion::class,
         Categoria::class,
         Cuenta::class,
-        Presupuesto::class
+        Presupuesto::class,
+        RecurringTransaction::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class BaseDatosFinanzas : RoomDatabase() {
@@ -31,6 +33,7 @@ abstract class BaseDatosFinanzas : RoomDatabase() {
     abstract fun categoriaDao(): CategoriaDao
     abstract fun cuentaDao(): CuentaDao
     abstract fun presupuestoDao(): PresupuestoDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
     
     companion object {
         @Volatile
@@ -43,10 +46,37 @@ abstract class BaseDatosFinanzas : RoomDatabase() {
                     BaseDatosFinanzas::class.java,
                     "finanzas_database"
                 )
+                    .addMigrations(MIGRATION_1_2)
                     .addCallback(CallbackInicial())
                     .build()
                 INSTANCIA = instancia
                 instancia
+            }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `transacciones_recurrentes` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `nombre` TEXT NOT NULL,
+                        `cantidad` REAL NOT NULL,
+                        `esGasto` INTEGER NOT NULL,
+                        `idCategoria` INTEGER NOT NULL,
+                        `idCuenta` INTEGER NOT NULL,
+                        `frecuencia` TEXT NOT NULL,
+                        `fechaProximaEjecucion` INTEGER NOT NULL,
+                        `activo` INTEGER NOT NULL,
+                        `ultimaEjecucion` INTEGER,
+                        `nota` TEXT NOT NULL,
+                        FOREIGN KEY(`idCategoria`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`idCuenta`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transacciones_recurrentes_idCategoria` ON `transacciones_recurrentes` (`idCategoria`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_transacciones_recurrentes_idCuenta` ON `transacciones_recurrentes` (`idCuenta`)")
             }
         }
         

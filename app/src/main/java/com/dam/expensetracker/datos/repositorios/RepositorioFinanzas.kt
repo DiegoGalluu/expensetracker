@@ -13,7 +13,8 @@ class RepositorioFinanzas(
     private val transaccionDao: TransaccionDao,
     private val categoriaDao: CategoriaDao,
     private val cuentaDao: CuentaDao,
-    private val presupuestoDao: PresupuestoDao
+    private val presupuestoDao: PresupuestoDao,
+    private val recurringTransactionDao: RecurringTransactionDao
 ) {
     
     // ===== TRANSACCIONES =====
@@ -156,5 +157,27 @@ class RepositorioFinanzas(
     
     suspend fun borrarPresupuesto(presupuesto: Presupuesto) {
         presupuestoDao.borrar(presupuesto)
+    }
+
+    // ===== TRANSACCIONES RECURRENTES =====
+
+    fun obtenerTodasTransaccionesRecurrentes(): Flow<List<RecurringTransaction>> {
+        return recurringTransactionDao.obtenerTodas()
+    }
+
+    suspend fun insertarTransaccionRecurrente(transaccionRecurrente: RecurringTransaction): Long {
+        return recurringTransactionDao.insertar(transaccionRecurrente)
+    }
+
+    suspend fun actualizarTransaccionRecurrente(transaccionRecurrente: RecurringTransaction) {
+        recurringTransactionDao.actualizar(transaccionRecurrente)
+    }
+
+    suspend fun borrarTransaccionRecurrente(transaccionRecurrente: RecurringTransaction) {
+        recurringTransactionDao.borrar(transaccionRecurrente)
+    }
+
+    suspend fun obtenerRecurrentesActivasVencidas(fechaActual: Long): List<RecurringTransaction> {
+        return recurringTransactionDao.obtenerActivasVencidas(fechaActual)
     }
 }

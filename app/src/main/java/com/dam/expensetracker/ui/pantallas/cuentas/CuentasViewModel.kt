@@ -7,7 +7,6 @@ import com.dam.expensetracker.datos.repositorios.RepositorioFinanzas
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -33,12 +32,8 @@ class CuentasViewModel(
             try {
                 asegurarCuentaEfectivo()
 
-                combine(
-                    repositorio.obtenerTodasCuentas()
-                ) { cuentas ->
-                    EstadoCuentas.Exito(cuentas = cuentas.first())
-                }.collect { estadoNuevo ->
-                    _estado.value = estadoNuevo
+                repositorio.obtenerTodasCuentas().collect { cuentas ->
+                    _estado.value = EstadoCuentas.Exito(cuentas = cuentas)
                 }
             } catch (e: Exception) {
                 _estado.value = EstadoCuentas.Error("Error al cargar cuentas: ${e.message}")

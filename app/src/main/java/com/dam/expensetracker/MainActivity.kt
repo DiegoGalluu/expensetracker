@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
             transaccionDao = baseDatos.transaccionDao(),
             categoriaDao = baseDatos.categoriaDao(),
             cuentaDao = baseDatos.cuentaDao(),
-            presupuestoDao = baseDatos.presupuestoDao()
+            presupuestoDao = baseDatos.presupuestoDao(),
+            recurringTransactionDao = baseDatos.recurringTransactionDao()
         )
         
         // Inicializar API de divisas con Retrofit

@@ -3,6 +3,7 @@ package com.dam.expensetracker.ui.pantallas.inicio
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dam.expensetracker.datos.local.entidades.Categoria
+import com.dam.expensetracker.datos.local.entidades.RecurringTransaction
 import com.dam.expensetracker.datos.local.entidades.Transaccion
 import com.dam.expensetracker.datos.remoto.dto.TipoCambioDto
 import com.dam.expensetracker.datos.repositorios.RepositorioDivisas
@@ -47,6 +48,8 @@ class InicioViewModel(
         viewModelScope.launch {
             try {
                 _estado.value = EstadoInicio.Cargando
+
+                procesarRecurrentesPendientes()
                 
                 // Combinar los flows de transacciones y categorías
                 combine(
@@ -82,6 +85,49 @@ class InicioViewModel(
                 _estado.value = EstadoInicio.Error("Error al cargar datos: ${e.message}")
             }
         }
+    }
+
+    private suspend fun procesarRecurrentesPendientes() {
+        val ahora = System.currentTimeMillis()
+        val recurrentesVencidas = repositorioFinanzas.obtenerRecurrentesActivasVencidas(ahora)
+
+        recurrentesVencidas.forEach { recurrente ->
+            val transaccion = Transaccion(
+                cantidad = recurrente.cantidad,
+                fecha = ahora,
+                esGasto = recurrente.esGasto,
+                idCategoria = recurrente.idCategoria,
+                idCuenta = recurrente.idCuenta,
+                nota = if (recurrente.nota.isNotBlank()) {
+                    "${recurrente.nota} (recurrente)"
+                } else {
+                    "${recurrente.nombre} (recurrente)"
+                }
+            )
+
+            repositorioFinanzas.insertarTransaccion(transaccion)
+
+            val siguienteEjecucion = calcularSiguienteEjecucion(recurrente, ahora)
+            repositorioFinanzas.actualizarTransaccionRecurrente(
+                recurrente.copy(
+                    ultimaEjecucion = ahora,
+                    fechaProximaEjecucion = siguienteEjecucion
+                )
+            )
+        }
+    }
+
+    private fun calcularSiguienteEjecucion(recurrente: RecurringTransaction, referencia: Long): Long {
+        val calendario = java.util.Calendar.getInstance()
+        calendario.timeInMillis = maxOf(recurrente.fechaProximaEjecucion, referencia)
+
+        when (recurrente.frecuencia) {
+            "DIARIA" -> calendario.add(java.util.Calendar.DAY_OF_YEAR, 1)
+            "SEMANAL" -> calendario.add(java.util.Calendar.WEEK_OF_YEAR, 1)
+            else -> calendario.add(java.util.Calendar.MONTH, 1)
+        }
+
+        return calendario.timeInMillis
     }
     
     /**

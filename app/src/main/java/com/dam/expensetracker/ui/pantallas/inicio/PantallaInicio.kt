@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ fun PantallaInicio(
     onNavegarMetas: () -> Unit,
     onNavegarPresupuestos: () -> Unit,
     onNavegarCuentas: () -> Unit,
+    onNavegarRecurrentes: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
@@ -121,6 +123,21 @@ fun PantallaInicio(
                             Icon(
                                 imageVector = Icons.Default.CreditCard,
                                 contentDescription = "Cuentas"
+                            )
+                        }
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Recurrentes") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarRecurrentes()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "Recurrentes"
                             )
                         }
                     )

@@ -21,6 +21,8 @@ import com.dam.expensetracker.ui.pantallas.login.PantallaLogin
 import com.dam.expensetracker.ui.pantallas.presupuestos.ModoPresupuestos
 import com.dam.expensetracker.ui.pantallas.presupuestos.PantallaPresupuestos
 import com.dam.expensetracker.ui.pantallas.presupuestos.PresupuestosViewModel
+import com.dam.expensetracker.ui.pantallas.recurrentes.PantallaRecurrentes
+import com.dam.expensetracker.ui.pantallas.recurrentes.RecurrentesViewModel
 
 /**
  * Rutas de navegación de la aplicación
@@ -31,6 +33,7 @@ sealed class Ruta(val ruta: String) {
     object Metas : Ruta("metas")
     object Presupuestos : Ruta("presupuestos")
     object Cuentas : Ruta("cuentas")
+    object Recurrentes : Ruta("recurrentes")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -90,6 +93,9 @@ fun NavegacionApp(
                 onNavegarCuentas = {
                     navController.navigate(Ruta.Cuentas.ruta)
                 },
+                onNavegarRecurrentes = {
+                    navController.navigate(Ruta.Recurrentes.ruta)
+                },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
                         popUpTo(Ruta.Inicio.ruta) { inclusive = true }
@@ -136,6 +142,19 @@ fun NavegacionApp(
             )
 
             PantallaCuentas(
+                onNavegarAtras = { navController.popBackStack() },
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Recurrentes.ruta) {
+            val viewModel: RecurrentesViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    RecurrentesViewModel(repositorioFinanzas)
+                }
+            )
+
+            PantallaRecurrentes(
                 onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )
