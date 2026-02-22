@@ -8,9 +8,6 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.dam.expensetracker.datos.local.dao.*
 import com.dam.expensetracker.datos.local.entidades.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * Base de datos Room que contiene todas las tablas de la app
@@ -36,21 +33,26 @@ abstract class BaseDatosFinanzas : RoomDatabase() {
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     
     companion object {
-        @Volatile
-        private var INSTANCIA: BaseDatosFinanzas? = null
-        
+        private val INSTANCIAS: MutableMap<String, BaseDatosFinanzas> = mutableMapOf()
+
         fun obtenerBaseDatos(context: Context): BaseDatosFinanzas {
-            return INSTANCIA ?: synchronized(this) {
-                val instancia = Room.databaseBuilder(
+            return obtenerBaseDatos(context, "anon")
+        }
+
+        fun obtenerBaseDatos(context: Context, claveUsuario: String): BaseDatosFinanzas {
+            val claveNormalizada = claveUsuario.ifBlank { "anon" }
+            val nombreBaseDatos = "finanzas_database_$claveNormalizada"
+
+            return INSTANCIAS[nombreBaseDatos] ?: synchronized(this) {
+                INSTANCIAS[nombreBaseDatos] ?: Room.databaseBuilder(
                     context.applicationContext,
                     BaseDatosFinanzas::class.java,
-                    "finanzas_database"
+                    nombreBaseDatos
                 )
                     .addMigrations(MIGRATION_1_2)
                     .addCallback(CallbackInicial())
                     .build()
-                INSTANCIA = instancia
-                instancia
+                    .also { INSTANCIAS[nombreBaseDatos] = it }
             }
         }
 
@@ -86,49 +88,11 @@ abstract class BaseDatosFinanzas : RoomDatabase() {
         private class CallbackInicial : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                
-                // Insertar datos iniciales en un hilo de fondo
-                INSTANCIA?.let { database ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        poblarDatosIniciales(database)
-                    }
-                }
-            }
-        }
-        
-        /**
-         * Método para insertar categorías, cuentas y presupuestos por defecto
-         */
-        private suspend fun poblarDatosIniciales(database: BaseDatosFinanzas) {
-            val categoriaDao = database.categoriaDao()
-            val cuentaDao = database.cuentaDao()
-            val presupuestoDao = database.presupuestoDao()
-            
-            // Única categoría predeterminada
-            val categorias = listOf(
-                Categoria(nombre = "Ahorro mensual", color = "#2E7D32")
-            )
-            
-            categorias.forEach { categoria ->
-                val id = categoriaDao.insertar(categoria)
-                
-                // Crear presupuesto por defecto para cada categoría (500€)
-                presupuestoDao.insertar(
-                    Presupuesto(
-                        idCategoria = id,
-                        limiteMensual = 500.0
-                    )
-                )
-            }
-            
-            // Cuentas por defecto
-            val cuentas = listOf(
-                Cuenta(nombre = "Efectivo"),
-                Cuenta(nombre = "Banco")
-            )
-            
-            cuentas.forEach { cuenta ->
-                cuentaDao.insertar(cuenta)
+
+                db.execSQL("INSERT INTO categorias(nombre, color) VALUES ('Ahorro mensual', '#2E7D32')")
+                db.execSQL("INSERT INTO presupuestos(idCategoria, limiteMensual) VALUES (last_insert_rowid(), 500.0)")
+                db.execSQL("INSERT INTO cuentas(nombre) VALUES ('Efectivo')")
+                db.execSQL("INSERT INTO cuentas(nombre) VALUES ('Banco')")
             }
         }
     }

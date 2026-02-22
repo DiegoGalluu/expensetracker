@@ -76,7 +76,10 @@ fun PantallaInicio(
                             modifier = Modifier.weight(1f)
                         )
 
-                        IconButton(onClick = onCerrarSesion) {
+                        IconButton(onClick = {
+                            scope.launch { drawerState.close() }
+                            onCerrarSesion()
+                        }) {
                             Icon(
                                 imageVector = Icons.Default.ExitToApp,
                                 contentDescription = "Cerrar sesión"

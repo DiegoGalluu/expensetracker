@@ -1,6 +1,7 @@
 package com.dam.expensetracker.ui.navegacion
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -30,6 +31,7 @@ import com.dam.expensetracker.ui.pantallas.presupuestos.PantallaPresupuestos
 import com.dam.expensetracker.ui.pantallas.presupuestos.PresupuestosViewModel
 import com.dam.expensetracker.ui.pantallas.recurrentes.PantallaRecurrentes
 import com.dam.expensetracker.ui.pantallas.recurrentes.RecurrentesViewModel
+import com.dam.expensetracker.utilidades.GestorAuth
 
 /**
  * Rutas de navegación de la aplicación
@@ -57,12 +59,17 @@ sealed class Ruta(val ruta: String) {
  */
 @Composable
 fun NavegacionApp(
-    repositorioFinanzas: RepositorioFinanzas,
+    crearRepositorioFinanzas: (String) -> RepositorioFinanzas,
     repositorioDivisas: RepositorioDivisas,
     repositorioBancarioSimulado: RepositorioBancarioSimulado
 ) {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    val gestorAuth = remember(context) { GestorAuth(context) }
     var emailUsuario by remember { mutableStateOf("") }
+    var repositorioFinanzasActivo by remember {
+        mutableStateOf(crearRepositorioFinanzas("anon"))
+    }
     
     NavHost(
         navController = navController,
@@ -73,6 +80,7 @@ fun NavegacionApp(
             PantallaLogin(
                 onLoginExitoso = { email ->
                     emailUsuario = email
+                    repositorioFinanzasActivo = crearRepositorioFinanzas(email)
                     navController.navigate(Ruta.Inicio.ruta) {
                         popUpTo(Ruta.Login.ruta) { inclusive = true }
                     }
@@ -84,7 +92,7 @@ fun NavegacionApp(
         composable(Ruta.Inicio.ruta) {
             val viewModel: InicioViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    InicioViewModel(repositorioFinanzas, repositorioDivisas)
+                    InicioViewModel(repositorioFinanzasActivo, repositorioDivisas)
                 }
             )
             
@@ -117,9 +125,24 @@ fun NavegacionApp(
                     navController.navigate(Ruta.Exportar.ruta)
                 },
                 onCerrarSesion = {
-                    navController.navigate(Ruta.Login.ruta) {
-                        popUpTo(Ruta.Inicio.ruta) { inclusive = true }
-                    }
+                    gestorAuth.cerrarSesion(
+                        onExito = {
+                            emailUsuario = ""
+                            repositorioFinanzasActivo = crearRepositorioFinanzas("anon")
+                            navController.navigate(Ruta.Login.ruta) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        },
+                        onError = {
+                            emailUsuario = ""
+                            repositorioFinanzasActivo = crearRepositorioFinanzas("anon")
+                            navController.navigate(Ruta.Login.ruta) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
                 },
                 emailUsuario = emailUsuario,
                 viewModel = viewModel
@@ -129,7 +152,7 @@ fun NavegacionApp(
         composable(Ruta.Metas.ruta) {
             val viewModel: PresupuestosViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    PresupuestosViewModel(repositorioFinanzas)
+                    PresupuestosViewModel(repositorioFinanzasActivo)
                 }
             )
 
@@ -143,7 +166,7 @@ fun NavegacionApp(
         composable(Ruta.Presupuestos.ruta) {
             val viewModel: PresupuestosViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    PresupuestosViewModel(repositorioFinanzas)
+                    PresupuestosViewModel(repositorioFinanzasActivo)
                 }
             )
 
@@ -157,7 +180,7 @@ fun NavegacionApp(
         composable(Ruta.Cuentas.ruta) {
             val viewModel: CuentasViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    CuentasViewModel(repositorioFinanzas)
+                    CuentasViewModel(repositorioFinanzasActivo)
                 }
             )
 
@@ -170,7 +193,7 @@ fun NavegacionApp(
         composable(Ruta.Recurrentes.ruta) {
             val viewModel: RecurrentesViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    RecurrentesViewModel(repositorioFinanzas)
+                    RecurrentesViewModel(repositorioFinanzasActivo)
                 }
             )
 
@@ -211,7 +234,7 @@ fun NavegacionApp(
             val viewModel: ExportarViewModel = viewModel(
                 factory = GenericViewModelFactory {
                     ExportarViewModel(
-                        repositorioFinanzas = repositorioFinanzas,
+                        repositorioFinanzas = repositorioFinanzasActivo,
                         appContext = context.applicationContext
                     )
                 }
@@ -231,7 +254,7 @@ fun NavegacionApp(
             val id = backStackEntry.arguments?.getLong("id") ?: 0L
             val viewModel: DetalleViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    DetalleViewModel(repositorioFinanzas)
+                    DetalleViewModel(repositorioFinanzasActivo)
                 }
             )
             
@@ -258,7 +281,7 @@ fun NavegacionApp(
             
             val viewModel: FormularioViewModel = viewModel(
                 factory = GenericViewModelFactory {
-                    FormularioViewModel(repositorioFinanzas)
+                    FormularioViewModel(repositorioFinanzasActivo)
                 }
             )
             

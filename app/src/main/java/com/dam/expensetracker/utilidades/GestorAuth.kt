@@ -38,6 +38,12 @@ class GestorAuth(private val context: Context) {
         AuthenticationAPIClient(cuenta),
         SharedPreferencesStorage(context)
     )
+
+    private fun limpiarSesionLocal() {
+        credencialesActuales = null
+        gestorCredenciales.clearCredentials()
+        preferencias.edit().remove("email_usuario").apply()
+    }
     
     /**
      * Inicia el flujo de login con Auth0
@@ -101,32 +107,17 @@ class GestorAuth(private val context: Context) {
             .withScheme(SCHEME)
             .start(activity, object : Callback<Void?, AuthenticationException> {
                 override fun onSuccess(payload: Void?) {
-                    credencialesActuales = null
-                    gestorCredenciales.clearCredentials()
-                    preferencias.edit().remove("email_usuario").apply()
+                    limpiarSesionLocal()
                     onExito()
                 }
                 
                 override fun onFailure(error: AuthenticationException) {
-                    onError("Error al cerrar sesión: ${error.message}")
+                    limpiarSesionLocal()
+                    onError("Error al cerrar sesión web (sesión local cerrada): ${error.message}")
                 }
             })
     }
     
-    /**
-     * Verifica si el usuario está autenticado
-     */
-    fun estaAutenticado(): Boolean {
-        return credencialesActuales != null || gestorCredenciales.hasValidCredentials()
-    }
-    
-    /**
-     * Obtiene el token de acceso actual
-     */
-    fun obtenerToken(): String? {
-        return credencialesActuales?.accessToken
-    }
-
     fun recuperarSesionGuardada(
         onExito: (String) -> Unit,
         onNoSesion: () -> Unit,

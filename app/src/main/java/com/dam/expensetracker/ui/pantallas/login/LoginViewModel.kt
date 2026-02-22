@@ -56,12 +56,4 @@ class LoginViewModel : ViewModel() {
         }
     }
     
-    /**
-     * Resetea el estado a inicial
-     */
-    fun resetearEstado() {
-        viewModelScope.launch {
-            _estado.value = EstadoLogin.Inicial
-        }
-    }
 }

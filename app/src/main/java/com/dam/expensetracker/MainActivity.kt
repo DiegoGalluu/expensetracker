@@ -19,29 +19,39 @@ import retrofit2.converter.gson.GsonConverterFactory
  * Actividad principal de la aplicación
  */
 class MainActivity : ComponentActivity() {
-    
-    // Base de datos
-    private lateinit var baseDatos: BaseDatosFinanzas
-    
+
     // Repositorios
-    private lateinit var repositorioFinanzas: RepositorioFinanzas
     private lateinit var repositorioDivisas: RepositorioDivisas
     private lateinit var repositorioBancarioSimulado: RepositorioBancarioSimulado
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        
-        // Inicializar base de datos
-        baseDatos = BaseDatosFinanzas.obtenerBaseDatos(applicationContext)
-        
-        // Inicializar repositorio de finanzas
-        repositorioFinanzas = RepositorioFinanzas(
+
+    private fun normalizarClaveUsuario(email: String): String {
+        val base = email.trim().lowercase().ifBlank { "anon" }
+        return buildString {
+            base.forEach { caracter ->
+                append(
+                    when {
+                        caracter.isLetterOrDigit() -> caracter
+                        else -> '_'
+                    }
+                )
+            }
+        }.take(80)
+    }
+
+    private fun crearRepositorioFinanzasPorUsuario(email: String): RepositorioFinanzas {
+        val claveUsuario = normalizarClaveUsuario(email)
+        val baseDatos = BaseDatosFinanzas.obtenerBaseDatos(applicationContext, claveUsuario)
+        return RepositorioFinanzas(
             transaccionDao = baseDatos.transaccionDao(),
             categoriaDao = baseDatos.categoriaDao(),
             cuentaDao = baseDatos.cuentaDao(),
             presupuestoDao = baseDatos.presupuestoDao(),
             recurringTransactionDao = baseDatos.recurringTransactionDao()
         )
+    }
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         
         // Inicializar API de divisas con Retrofit
         val retrofit = Retrofit.Builder()
@@ -68,7 +78,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             TemaExpenseTracker {
                 NavegacionApp(
-                    repositorioFinanzas = repositorioFinanzas,
+                    crearRepositorioFinanzas = { email -> crearRepositorioFinanzasPorUsuario(email) },
                     repositorioDivisas = repositorioDivisas,
                     repositorioBancarioSimulado = repositorioBancarioSimulado
                 )

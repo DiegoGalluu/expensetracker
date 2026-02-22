@@ -182,6 +182,73 @@ class FormularioViewModel(
     fun seleccionarCuenta(cuenta: Cuenta) {
         _cuentaSeleccionada.value = cuenta
     }
+
+    fun crearCategoriaDesdeSelector(nombreCategoria: String, onResultado: (String?) -> Unit) {
+        viewModelScope.launch {
+            val nombreNormalizado = nombreCategoria.trim()
+
+            if (nombreNormalizado.isBlank()) {
+                onResultado("El nombre de la categoría es obligatorio")
+                return@launch
+            }
+
+            if (nombreNormalizado.equals("Ahorro mensual", ignoreCase = true)) {
+                onResultado("Ahorro mensual ya existe como categoría fija")
+                return@launch
+            }
+
+            if (categoriasPredeterminadasLegacy.any { it.equals(nombreNormalizado, ignoreCase = true) }) {
+                onResultado("Esa categoría legacy está bloqueada")
+                return@launch
+            }
+
+            try {
+                val categoriasExistentes = repositorio.obtenerTodasCategorias().first()
+                val duplicada = categoriasExistentes.any {
+                    it.nombre.trim().equals(nombreNormalizado, ignoreCase = true)
+                }
+
+                if (duplicada) {
+                    onResultado("Ya existe una categoría con ese nombre")
+                    return@launch
+                }
+
+                val nuevaCategoria = Categoria(
+                    nombre = nombreNormalizado,
+                    color = "#1976D2"
+                )
+
+                val nuevoId = repositorio.insertarCategoria(nuevaCategoria)
+                val categoriaInsertada = nuevaCategoria.copy(id = nuevoId)
+
+                _categoriaSeleccionada.value = categoriaInsertada
+
+                val estadoActual = _estado.value
+                when (estadoActual) {
+                    is EstadoFormulario.CargandoDatos -> {
+                        _estado.value = estadoActual.copy(
+                            categorias = (estadoActual.categorias + categoriaInsertada)
+                                .sortedBy { it.nombre.lowercase() }
+                        )
+                    }
+
+                    is EstadoFormulario.CargandoDatosConError -> {
+                        _estado.value = estadoActual.copy(
+                            categorias = (estadoActual.categorias + categoriaInsertada)
+                                .sortedBy { it.nombre.lowercase() },
+                            mensaje = ""
+                        )
+                    }
+
+                    else -> Unit
+                }
+
+                onResultado(null)
+            } catch (e: Exception) {
+                onResultado("No se pudo crear la categoría: ${e.message}")
+            }
+        }
+    }
     
     /**
      * Valida y guarda la transacción

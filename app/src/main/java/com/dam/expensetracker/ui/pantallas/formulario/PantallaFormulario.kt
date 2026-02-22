@@ -29,6 +29,9 @@ fun PantallaFormulario(
     val esGasto by viewModel.esGasto.collectAsState()
     val categoriaSeleccionada by viewModel.categoriaSeleccionada.collectAsState()
     val cuentaSeleccionada by viewModel.cuentaSeleccionada.collectAsState()
+    var mostrarModalNuevaCategoria by remember { mutableStateOf(false) }
+    var nombreNuevaCategoria by remember { mutableStateOf("") }
+    var errorNuevaCategoria by remember { mutableStateOf<String?>(null) }
     
     // Cargar datos al crear la pantalla
     LaunchedEffect(transaccionId) {
@@ -84,6 +87,11 @@ fun PantallaFormulario(
                     onNotaChange = { viewModel.actualizarNota(it) },
                     onTipoChange = { viewModel.cambiarTipo(it) },
                     onCategoriaChange = { viewModel.seleccionarCategoria(it) },
+                    onCrearNuevaCategoria = {
+                        mostrarModalNuevaCategoria = true
+                        nombreNuevaCategoria = ""
+                        errorNuevaCategoria = null
+                    },
                     onCuentaChange = { viewModel.seleccionarCuenta(it) },
                     onGuardar = { viewModel.guardarTransaccion() },
                     paddingValues = paddingValues,
@@ -104,6 +112,11 @@ fun PantallaFormulario(
                     onNotaChange = { viewModel.actualizarNota(it) },
                     onTipoChange = { viewModel.cambiarTipo(it) },
                     onCategoriaChange = { viewModel.seleccionarCategoria(it) },
+                    onCrearNuevaCategoria = {
+                        mostrarModalNuevaCategoria = true
+                        nombreNuevaCategoria = ""
+                        errorNuevaCategoria = null
+                    },
                     onCuentaChange = { viewModel.seleccionarCuenta(it) },
                     onGuardar = { viewModel.guardarTransaccion() },
                     paddingValues = paddingValues,
@@ -131,6 +144,66 @@ fun PantallaFormulario(
             }
         }
     }
+
+    if (mostrarModalNuevaCategoria) {
+        AlertDialog(
+            onDismissRequest = {
+                mostrarModalNuevaCategoria = false
+                errorNuevaCategoria = null
+            },
+            title = { Text("Nueva categoría") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = nombreNuevaCategoria,
+                        onValueChange = {
+                            nombreNuevaCategoria = it
+                            errorNuevaCategoria = null
+                        },
+                        label = { Text("Nombre") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = errorNuevaCategoria != null
+                    )
+
+                    if (!errorNuevaCategoria.isNullOrBlank()) {
+                        Text(
+                            text = errorNuevaCategoria!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.crearCategoriaDesdeSelector(nombreNuevaCategoria) { error ->
+                            if (error == null) {
+                                mostrarModalNuevaCategoria = false
+                                nombreNuevaCategoria = ""
+                                errorNuevaCategoria = null
+                            } else {
+                                errorNuevaCategoria = error
+                            }
+                        }
+                    }
+                ) {
+                    Text("Crear")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        mostrarModalNuevaCategoria = false
+                        errorNuevaCategoria = null
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -147,6 +220,7 @@ private fun FormularioContenido(
     onNotaChange: (String) -> Unit,
     onTipoChange: (Boolean) -> Unit,
     onCategoriaChange: (Categoria) -> Unit,
+    onCrearNuevaCategoria: () -> Unit,
     onCuentaChange: (Cuenta) -> Unit,
     onGuardar: () -> Unit,
     paddingValues: PaddingValues,
@@ -234,6 +308,15 @@ private fun FormularioContenido(
                         }
                     )
                 }
+
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("+ Crear nueva categoría") },
+                    onClick = {
+                        expandidoCategorias = false
+                        onCrearNuevaCategoria()
+                    }
+                )
             }
         }
         
