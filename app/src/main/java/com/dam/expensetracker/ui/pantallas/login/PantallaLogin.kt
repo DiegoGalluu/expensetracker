@@ -21,7 +21,7 @@ import com.dam.expensetracker.utilidades.GestorAuth
  */
 @Composable
 fun PantallaLogin(
-    onLoginExitoso: () -> Unit,
+    onLoginExitoso: (String) -> Unit,
     viewModel: LoginViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -31,8 +31,9 @@ fun PantallaLogin(
     
     // Navegar cuando el login sea exitoso
     LaunchedEffect(estado) {
-        if (estado is EstadoLogin.Autenticado) {
-            onLoginExitoso()
+        val estadoActual = estado
+        if (estadoActual is EstadoLogin.Autenticado) {
+            onLoginExitoso(estadoActual.emailUsuario)
         }
     }
     

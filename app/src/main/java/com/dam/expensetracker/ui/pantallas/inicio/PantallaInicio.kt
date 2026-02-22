@@ -5,7 +5,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import com.dam.expensetracker.datos.local.entidades.Transaccion
 import com.dam.expensetracker.ui.componentes.DatosGrafico
 import com.dam.expensetracker.ui.componentes.GraficoCircular
 import com.dam.expensetracker.ui.componentes.TarjetaTransaccion
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla de inicio/dashboard que muestra resumen financiero y lista de transacciones
@@ -28,105 +32,162 @@ import com.dam.expensetracker.ui.componentes.TarjetaTransaccion
 fun PantallaInicio(
     onNavegarDetalle: (Long) -> Unit,
     onNavegarFormulario: () -> Unit,
+    onNavegarMetas: () -> Unit,
     onNavegarPresupuestos: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
 ) {
     val estado by viewModel.estado.collectAsState()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("ExpenseTracker")
-                        Text(
-                            text = emailUsuario,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                actions = {
-                    TextButton(onClick = onNavegarPresupuestos) {
-                        Text(
-                            text = "Metas",
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "ExpenseTracker",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                    IconButton(onClick = onCerrarSesion) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "Cerrar sesión"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavegarFormulario,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Añadir transacción",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
-        }
-    ) { paddingValues ->
-        when (val estadoActual = estado) {
-            is EstadoInicio.Cargando -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            
-            is EstadoInicio.Error -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = estadoActual.mensaje,
-                            modifier = Modifier.padding(16.dp),
+                            text = emailUsuario,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            modifier = Modifier.weight(1f)
                         )
+
+                        IconButton(onClick = onCerrarSesion) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Cerrar sesión"
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    NavigationDrawerItem(
+                        label = { Text("Metas") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarMetas()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Flag,
+                                contentDescription = "Metas"
+                            )
+                        }
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Presupuestos") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarPresupuestos()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Assessment,
+                                contentDescription = "Presupuestos"
+                            )
+                        }
+                    )
                 }
             }
-            
-            is EstadoInicio.Exito -> {
-                ContenidoInicio(
-                    transacciones = estadoActual.transacciones,
-                    categorias = estadoActual.categorias,
-                    saldoTotal = estadoActual.saldoTotal,
-                    totalGastosMes = estadoActual.totalGastosMes,
-                    onNavegarDetalle = onNavegarDetalle,
-                    paddingValues = paddingValues
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("ExpenseTracker") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Abrir menú"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
                 )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = onNavegarFormulario,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Añadir transacción",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        ) { paddingValues ->
+            when (val estadoActual = estado) {
+                is EstadoInicio.Cargando -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is EstadoInicio.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = estadoActual.mensaje,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
+                is EstadoInicio.Exito -> {
+                    ContenidoInicio(
+                        transacciones = estadoActual.transacciones,
+                        categorias = estadoActual.categorias,
+                        saldoTotal = estadoActual.saldoTotal,
+                        totalGastosMes = estadoActual.totalGastosMes,
+                        onNavegarDetalle = onNavegarDetalle,
+                        paddingValues = paddingValues
+                    )
+                }
             }
         }
     }

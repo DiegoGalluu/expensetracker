@@ -43,10 +43,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
+enum class ModoPresupuestos {
+    METAS,
+    PRESUPUESTOS
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPresupuestos(
     onNavegarAtras: () -> Unit,
+    modo: ModoPresupuestos,
     viewModel: PresupuestosViewModel
 ) {
     val estado by viewModel.estado.collectAsState()
@@ -74,7 +80,11 @@ fun PantallaPresupuestos(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Presupuestos y metas") },
+                title = {
+                    Text(
+                        if (modo == ModoPresupuestos.METAS) "Metas" else "Presupuestos"
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavegarAtras) {
                         Icon(
@@ -123,6 +133,7 @@ fun PantallaPresupuestos(
             is EstadoPresupuestos.Exito -> {
                 ContenidoPresupuestos(
                     paddingValues = paddingValues,
+                    modo = modo,
                     estado = estadoActual,
                     valoresEditados = valoresEditados,
                     metaTexto = metaTexto,
@@ -170,6 +181,7 @@ fun PantallaPresupuestos(
 @Composable
 private fun ContenidoPresupuestos(
     paddingValues: PaddingValues,
+    modo: ModoPresupuestos,
     estado: EstadoPresupuestos.Exito,
     valoresEditados: MutableMap<Long, String>,
     metaTexto: String,
@@ -191,6 +203,9 @@ private fun ContenidoPresupuestos(
     onProgresoMetaChange: (Long, String) -> Unit,
     onGuardarProgresoMeta: (Long) -> Unit
 ) {
+    val mostrarMetas = modo == ModoPresupuestos.METAS
+    val mostrarPresupuestos = modo == ModoPresupuestos.PRESUPUESTOS
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -200,82 +215,86 @@ private fun ContenidoPresupuestos(
     ) {
         item { Spacer(modifier = Modifier.height(8.dp)) }
 
-        item {
-            TarjetaMetaAhorro(
-                ahorroActual = estado.ahorroActualMes,
-                metaAhorro = estado.metaAhorroMensual,
-                metaTexto = metaTexto,
-                onMetaTextoChange = onMetaTextoChange,
-                onGuardarMeta = onGuardarMeta
-            )
+        if (mostrarMetas) {
+            item {
+                TarjetaMetaAhorro(
+                    ahorroActual = estado.ahorroActualMes,
+                    metaAhorro = estado.metaAhorroMensual,
+                    metaTexto = metaTexto,
+                    onMetaTextoChange = onMetaTextoChange,
+                    onGuardarMeta = onGuardarMeta
+                )
+            }
+
+            item {
+                TarjetaCrearMetaPersonalizada(
+                    nombreMeta = nombreMetaNueva,
+                    objetivoMeta = objetivoMetaNueva,
+                    onNombreMetaChange = onNombreMetaNuevaChange,
+                    onObjetivoMetaChange = onObjetivoMetaNuevaChange,
+                    onCrearMeta = onCrearMetaPersonalizada
+                )
+            }
+
+            if (estado.metasPersonalizadas.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Tus metas personalizadas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                items(estado.metasPersonalizadas, key = { it.id }) { meta ->
+                    TarjetaMetaPersonalizada(
+                        meta = meta,
+                        progresoTexto = progresoMetaEditado[meta.id] ?: meta.progresoActual.toString(),
+                        onProgresoChange = { onProgresoMetaChange(meta.id, it) },
+                        onGuardarProgreso = { onGuardarProgresoMeta(meta.id) }
+                    )
+                }
+            }
         }
 
-        item {
-            TarjetaCrearMetaPersonalizada(
-                nombreMeta = nombreMetaNueva,
-                objetivoMeta = objetivoMetaNueva,
-                onNombreMetaChange = onNombreMetaNuevaChange,
-                onObjetivoMetaChange = onObjetivoMetaNuevaChange,
-                onCrearMeta = onCrearMetaPersonalizada
-            )
-        }
+        if (mostrarPresupuestos) {
+            item {
+                TarjetaCrearPresupuesto(
+                    nombre = nombrePresupuestoNuevo,
+                    limite = limitePresupuestoNuevo,
+                    onNombreChange = onNombrePresupuestoNuevoChange,
+                    onLimiteChange = onLimitePresupuestoNuevoChange,
+                    onCrear = onCrearPresupuesto
+                )
+            }
 
-        if (estado.metasPersonalizadas.isNotEmpty()) {
             item {
                 Text(
-                    text = "Tus metas personalizadas",
+                    text = "Tus tarjetas de presupuesto",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
 
-            items(estado.metasPersonalizadas, key = { it.id }) { meta ->
-                TarjetaMetaPersonalizada(
-                    meta = meta,
-                    progresoTexto = progresoMetaEditado[meta.id] ?: meta.progresoActual.toString(),
-                    onProgresoChange = { onProgresoMetaChange(meta.id, it) },
-                    onGuardarProgreso = { onGuardarProgresoMeta(meta.id) }
-                )
-            }
-        }
-
-        item {
-            TarjetaCrearPresupuesto(
-                nombre = nombrePresupuestoNuevo,
-                limite = limitePresupuestoNuevo,
-                onNombreChange = onNombrePresupuestoNuevoChange,
-                onLimiteChange = onLimitePresupuestoNuevoChange,
-                onCrear = onCrearPresupuesto
-            )
-        }
-
-        item {
-            Text(
-                text = "Tus tarjetas de presupuesto",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (estado.presupuestos.isEmpty()) {
-            item {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Aún no has creado presupuestos personalizados.",
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodyMedium
+            if (estado.presupuestos.isEmpty()) {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Aún no has creado presupuestos personalizados.",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            } else {
+                items(estado.presupuestos, key = { it.idCategoria }) { item ->
+                    val textoLimite = valoresEditados[item.idCategoria] ?: item.limiteMensual.toString()
+                    TarjetaPresupuestoCategoria(
+                        item = item,
+                        limiteTexto = textoLimite,
+                        onLimiteChange = { onLimiteChange(item.idCategoria, it) },
+                        onGuardar = { onGuardarPresupuesto(item.idCategoria) }
                     )
                 }
-            }
-        } else {
-            items(estado.presupuestos, key = { it.idCategoria }) { item ->
-                val textoLimite = valoresEditados[item.idCategoria] ?: item.limiteMensual.toString()
-                TarjetaPresupuestoCategoria(
-                    item = item,
-                    limiteTexto = textoLimite,
-                    onLimiteChange = { onLimiteChange(item.idCategoria, it) },
-                    onGuardar = { onGuardarPresupuesto(item.idCategoria) }
-                )
             }
         }
 

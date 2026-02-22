@@ -16,6 +16,7 @@ import com.dam.expensetracker.ui.pantallas.formulario.PantallaFormulario
 import com.dam.expensetracker.ui.pantallas.inicio.InicioViewModel
 import com.dam.expensetracker.ui.pantallas.inicio.PantallaInicio
 import com.dam.expensetracker.ui.pantallas.login.PantallaLogin
+import com.dam.expensetracker.ui.pantallas.presupuestos.ModoPresupuestos
 import com.dam.expensetracker.ui.pantallas.presupuestos.PantallaPresupuestos
 import com.dam.expensetracker.ui.pantallas.presupuestos.PresupuestosViewModel
 
@@ -25,6 +26,7 @@ import com.dam.expensetracker.ui.pantallas.presupuestos.PresupuestosViewModel
 sealed class Ruta(val ruta: String) {
     object Login : Ruta("login")
     object Inicio : Ruta("inicio")
+    object Metas : Ruta("metas")
     object Presupuestos : Ruta("presupuestos")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
@@ -52,10 +54,8 @@ fun NavegacionApp(
         // Pantalla de Login
         composable(Ruta.Login.ruta) {
             PantallaLogin(
-                onLoginExitoso = {
-                    // En una app real obtendríamos el email de un estado global o del ViewModel
-                    // Aquí simplificamos para la navegación
-                    emailUsuario = "usuario@ejemplo.com"
+                onLoginExitoso = { email ->
+                    emailUsuario = email
                     navController.navigate(Ruta.Inicio.ruta) {
                         popUpTo(Ruta.Login.ruta) { inclusive = true }
                     }
@@ -78,6 +78,9 @@ fun NavegacionApp(
                 onNavegarFormulario = {
                     navController.navigate(Ruta.Formulario.crearRuta())
                 },
+                onNavegarMetas = {
+                    navController.navigate(Ruta.Metas.ruta)
+                },
                 onNavegarPresupuestos = {
                     navController.navigate(Ruta.Presupuestos.ruta)
                 },
@@ -91,6 +94,20 @@ fun NavegacionApp(
             )
         }
 
+        composable(Ruta.Metas.ruta) {
+            val viewModel: PresupuestosViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    PresupuestosViewModel(repositorioFinanzas)
+                }
+            )
+
+            PantallaPresupuestos(
+                onNavegarAtras = { navController.popBackStack() },
+                modo = ModoPresupuestos.METAS,
+                viewModel = viewModel
+            )
+        }
+
         composable(Ruta.Presupuestos.ruta) {
             val viewModel: PresupuestosViewModel = viewModel(
                 factory = GenericViewModelFactory {
@@ -100,6 +117,7 @@ fun NavegacionApp(
 
             PantallaPresupuestos(
                 onNavegarAtras = { navController.popBackStack() },
+                modo = ModoPresupuestos.PRESUPUESTOS,
                 viewModel = viewModel
             )
         }
