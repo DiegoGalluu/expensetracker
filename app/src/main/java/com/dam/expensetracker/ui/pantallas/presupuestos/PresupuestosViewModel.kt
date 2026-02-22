@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.random.Random
@@ -202,6 +203,69 @@ class PresupuestosViewModel(
 
         _estadoMetasPersonalizadas.value = _estadoMetasPersonalizadas.value.map {
             if (it.id == idMeta) it.copy(progresoActual = progreso) else it
+        }
+    }
+
+    fun borrarMetaPersonalizada(idMeta: Long) {
+        viewModelScope.launch {
+            try {
+                val categoria = repositorio.obtenerCategoriaPorId(idMeta)
+                if (categoria == null) return@launch
+
+                if (categoria.nombre == "Ahorro mensual") {
+                    _estado.value = EstadoPresupuestos.Error("Ahorro mensual es una categoría fija y no se puede borrar")
+                    return@launch
+                }
+
+                val tieneTransacciones = repositorio
+                    .obtenerTransaccionesPorCategoria(idMeta)
+                    .first()
+                    .isNotEmpty()
+
+                if (tieneTransacciones) {
+                    _estado.value = EstadoPresupuestos.Error("No puedes borrar esta meta porque tiene transacciones asociadas")
+                    return@launch
+                }
+
+                repositorio.borrarCategoria(categoria)
+                _estadoMetasPersonalizadas.value = _estadoMetasPersonalizadas.value.filterNot { it.id == idMeta }
+            } catch (e: Exception) {
+                _estado.value = EstadoPresupuestos.Error("Error al borrar meta: ${e.message}")
+            }
+        }
+    }
+
+    fun borrarPresupuestoPersonalizado(idCategoria: Long) {
+        viewModelScope.launch {
+            try {
+                val categoria = repositorio.obtenerCategoriaPorId(idCategoria)
+                if (categoria == null) return@launch
+
+                if (categoria.nombre == "Ahorro mensual") {
+                    _estado.value = EstadoPresupuestos.Error("Ahorro mensual es una categoría fija y no se puede borrar")
+                    return@launch
+                }
+
+                val tieneTransacciones = repositorio
+                    .obtenerTransaccionesPorCategoria(idCategoria)
+                    .first()
+                    .isNotEmpty()
+
+                if (tieneTransacciones) {
+                    _estado.value = EstadoPresupuestos.Error("No puedes borrar este presupuesto porque tiene transacciones asociadas")
+                    return@launch
+                }
+
+                val presupuesto = repositorio.obtenerPresupuestoPorCategoria(idCategoria)
+                if (presupuesto != null) {
+                    repositorio.borrarPresupuesto(presupuesto)
+                }
+
+                repositorio.borrarCategoria(categoria)
+                _estadoMetasPersonalizadas.value = _estadoMetasPersonalizadas.value.filterNot { it.id == idCategoria }
+            } catch (e: Exception) {
+                _estado.value = EstadoPresupuestos.Error("Error al borrar presupuesto: ${e.message}")
+            }
         }
     }
 

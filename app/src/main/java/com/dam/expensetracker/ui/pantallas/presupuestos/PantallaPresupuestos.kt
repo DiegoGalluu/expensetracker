@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +51,11 @@ enum class ModoPresupuestos {
     PRESUPUESTOS
 }
 
+private sealed class ConfirmacionBorrado {
+    data class Meta(val id: Long, val nombre: String) : ConfirmacionBorrado()
+    data class Presupuesto(val idCategoria: Long, val nombre: String) : ConfirmacionBorrado()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPresupuestos(
@@ -63,6 +71,7 @@ fun PantallaPresupuestos(
     var limitePresupuestoNuevo by remember { mutableStateOf("") }
     var nombreMetaNueva by remember { mutableStateOf("") }
     var objetivoMetaNueva by remember { mutableStateOf("") }
+    var confirmacionBorrado by remember { mutableStateOf<ConfirmacionBorrado?>(null) }
 
     LaunchedEffect(estado) {
         val estadoActual = estado
@@ -171,9 +180,50 @@ fun PantallaPresupuestos(
                     onGuardarProgresoMeta = { idMeta ->
                         val valor = progresoMetaEditado[idMeta] ?: "0"
                         viewModel.actualizarProgresoMeta(idMeta, valor)
+                    },
+                    onSolicitarBorrarMeta = { idMeta, nombre ->
+                        confirmacionBorrado = ConfirmacionBorrado.Meta(idMeta, nombre)
+                    },
+                    onSolicitarBorrarPresupuesto = { idCategoria, nombre ->
+                        confirmacionBorrado = ConfirmacionBorrado.Presupuesto(idCategoria, nombre)
                     }
                 )
             }
+        }
+
+        val confirmacionActual = confirmacionBorrado
+        if (confirmacionActual != null) {
+            AlertDialog(
+                onDismissRequest = { confirmacionBorrado = null },
+                title = { Text("Confirmar borrado") },
+                text = {
+                    val nombre = when (confirmacionActual) {
+                        is ConfirmacionBorrado.Meta -> confirmacionActual.nombre
+                        is ConfirmacionBorrado.Presupuesto -> confirmacionActual.nombre
+                    }
+                    Text("¿Seguro que quieres borrar \"$nombre\"?")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        when (confirmacionActual) {
+                            is ConfirmacionBorrado.Meta -> {
+                                viewModel.borrarMetaPersonalizada(confirmacionActual.id)
+                            }
+                            is ConfirmacionBorrado.Presupuesto -> {
+                                viewModel.borrarPresupuestoPersonalizado(confirmacionActual.idCategoria)
+                            }
+                        }
+                        confirmacionBorrado = null
+                    }) {
+                        Text("Si")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmacionBorrado = null }) {
+                        Text("No")
+                    }
+                }
+            )
         }
     }
 }
@@ -201,7 +251,9 @@ private fun ContenidoPresupuestos(
     onObjetivoMetaNuevaChange: (String) -> Unit,
     onCrearMetaPersonalizada: () -> Unit,
     onProgresoMetaChange: (Long, String) -> Unit,
-    onGuardarProgresoMeta: (Long) -> Unit
+    onGuardarProgresoMeta: (Long) -> Unit,
+    onSolicitarBorrarMeta: (Long, String) -> Unit,
+    onSolicitarBorrarPresupuesto: (Long, String) -> Unit
 ) {
     val mostrarMetas = modo == ModoPresupuestos.METAS
     val mostrarPresupuestos = modo == ModoPresupuestos.PRESUPUESTOS
@@ -250,7 +302,8 @@ private fun ContenidoPresupuestos(
                         meta = meta,
                         progresoTexto = progresoMetaEditado[meta.id] ?: meta.progresoActual.toString(),
                         onProgresoChange = { onProgresoMetaChange(meta.id, it) },
-                        onGuardarProgreso = { onGuardarProgresoMeta(meta.id) }
+                        onGuardarProgreso = { onGuardarProgresoMeta(meta.id) },
+                        onSolicitarBorrado = { onSolicitarBorrarMeta(meta.id, meta.nombre) }
                     )
                 }
             }
@@ -292,7 +345,10 @@ private fun ContenidoPresupuestos(
                         item = item,
                         limiteTexto = textoLimite,
                         onLimiteChange = { onLimiteChange(item.idCategoria, it) },
-                        onGuardar = { onGuardarPresupuesto(item.idCategoria) }
+                        onGuardar = { onGuardarPresupuesto(item.idCategoria) },
+                        onSolicitarBorrado = {
+                            onSolicitarBorrarPresupuesto(item.idCategoria, item.nombreCategoria)
+                        }
                     )
                 }
             }
@@ -353,17 +409,32 @@ private fun TarjetaMetaPersonalizada(
     meta: MetaPersonalizadaUi,
     progresoTexto: String,
     onProgresoChange: (String) -> Unit,
-    onGuardarProgreso: () -> Unit
+    onGuardarProgreso: () -> Unit,
+    onSolicitarBorrado: () -> Unit
 ) {
     val progreso = if (meta.objetivo <= 0.0) 0f else (meta.progresoActual / meta.objetivo).toFloat().coerceIn(0f, 1f)
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = meta.nombre,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = meta.nombre,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(onClick = onSolicitarBorrado) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Borrar meta"
+                    )
+                }
+            }
             Text(
                 text = "Objetivo: ${String.format("%.2f€", meta.objetivo)}",
                 style = MaterialTheme.typography.bodyMedium
@@ -514,17 +585,32 @@ private fun TarjetaPresupuestoCategoria(
     item: PresupuestoCategoriaUi,
     limiteTexto: String,
     onLimiteChange: (String) -> Unit,
-    onGuardar: () -> Unit
+    onGuardar: () -> Unit,
+    onSolicitarBorrado: () -> Unit
 ) {
     val porcentajeUso = if (item.limiteMensual <= 0.0) 0f else (item.gastoMesActual / item.limiteMensual).toFloat()
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = item.nombreCategoria,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = item.nombreCategoria,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(onClick = onSolicitarBorrado) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Borrar presupuesto"
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 

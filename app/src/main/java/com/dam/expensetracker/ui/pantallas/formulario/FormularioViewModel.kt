@@ -72,6 +72,8 @@ class FormularioViewModel(
         viewModelScope.launch {
             try {
                 _estado.value = EstadoFormulario.Cargando
+
+                asegurarCategoriaAhorroMensual()
                 
                 // Combinar flows de categorías y cuentas
                 combine(
@@ -115,6 +117,20 @@ class FormularioViewModel(
             } catch (e: Exception) {
                 _estado.value = EstadoFormulario.Error("Error al cargar datos: ${e.message}")
             }
+        }
+    }
+
+    private suspend fun asegurarCategoriaAhorroMensual() {
+        val categorias = repositorio.obtenerTodasCategorias().first()
+        val existeAhorroMensual = categorias.any { it.nombre.equals("Ahorro mensual", ignoreCase = true) }
+
+        if (!existeAhorroMensual) {
+            repositorio.insertarCategoria(
+                Categoria(
+                    nombre = "Ahorro mensual",
+                    color = "#2E7D32"
+                )
+            )
         }
     }
     
