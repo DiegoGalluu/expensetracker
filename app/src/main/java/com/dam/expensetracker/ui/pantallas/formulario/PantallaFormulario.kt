@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -292,7 +293,7 @@ private fun FormularioContenido(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandidoCategorias) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -334,7 +335,7 @@ private fun FormularioContenido(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandidoCuentas) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                        .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
