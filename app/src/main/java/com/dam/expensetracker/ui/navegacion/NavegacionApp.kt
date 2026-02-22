@@ -18,6 +18,8 @@ import com.dam.expensetracker.ui.pantallas.cuentas.CuentasViewModel
 import com.dam.expensetracker.ui.pantallas.cuentas.PantallaCuentas
 import com.dam.expensetracker.ui.pantallas.divisas.DivisasViewModel
 import com.dam.expensetracker.ui.pantallas.divisas.PantallaDivisas
+import com.dam.expensetracker.ui.pantallas.exportar.ExportarViewModel
+import com.dam.expensetracker.ui.pantallas.exportar.PantallaExportar
 import com.dam.expensetracker.ui.pantallas.formulario.FormularioViewModel
 import com.dam.expensetracker.ui.pantallas.formulario.PantallaFormulario
 import com.dam.expensetracker.ui.pantallas.inicio.InicioViewModel
@@ -41,6 +43,7 @@ sealed class Ruta(val ruta: String) {
     object Recurrentes : Ruta("recurrentes")
     object Divisas : Ruta("divisas")
     object Banco : Ruta("banco")
+    object Exportar : Ruta("exportar")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -109,6 +112,9 @@ fun NavegacionApp(
                 },
                 onNavegarBanco = {
                     navController.navigate(Ruta.Banco.ruta)
+                },
+                onNavegarExportar = {
+                    navController.navigate(Ruta.Exportar.ruta)
                 },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
@@ -195,6 +201,23 @@ fun NavegacionApp(
             )
 
             PantallaBanco(
+                onNavegarAtras = { navController.popBackStack() },
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Exportar.ruta) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val viewModel: ExportarViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    ExportarViewModel(
+                        repositorioFinanzas = repositorioFinanzas,
+                        appContext = context.applicationContext
+                    )
+                }
+            )
+
+            PantallaExportar(
                 onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
@@ -42,6 +43,7 @@ fun PantallaInicio(
     onNavegarRecurrentes: () -> Unit,
     onNavegarDivisas: () -> Unit,
     onNavegarBanco: () -> Unit,
+    onNavegarExportar: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
@@ -172,6 +174,21 @@ fun PantallaInicio(
                             Icon(
                                 imageVector = Icons.Default.Balance,
                                 contentDescription = "Banco"
+                            )
+                        }
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Exportar") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarExportar()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = "Exportar"
                             )
                         }
                     )
