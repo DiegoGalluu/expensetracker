@@ -63,6 +63,7 @@ fun PantallaRecurrentes(
     var cantidad by remember { mutableStateOf("") }
     var nota by remember { mutableStateOf("") }
     var esGasto by remember { mutableStateOf(true) }
+    var activo by remember { mutableStateOf(true) }
     var categoriaSeleccionada by remember { mutableStateOf<Categoria?>(null) }
     var cuentaSeleccionada by remember { mutableStateOf<Cuenta?>(null) }
     var frecuencia by remember { mutableStateOf("MENSUAL") }
@@ -188,6 +189,14 @@ fun PantallaRecurrentes(
                                 SelectorFrecuencia(frecuencia = frecuencia, onFrecuenciaChange = { frecuencia = it })
 
                                 Spacer(modifier = Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Estado: ")
+                                    Text(if (activo) "Activo" else "Inactivo", fontWeight = FontWeight.SemiBold)
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    Switch(checked = activo, onCheckedChange = { activo = it })
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
                                 SelectorCategoria(
                                     categorias = estadoActual.categorias,
                                     categoriaSeleccionada = categoriaSeleccionada,
@@ -225,6 +234,7 @@ fun PantallaRecurrentes(
                                                 nombre = nombre,
                                                 cantidadTexto = cantidad,
                                                 esGasto = esGasto,
+                                                activo = activo,
                                                 idCategoria = categoriaSeleccionada?.id,
                                                 idCuenta = cuentaSeleccionada?.id,
                                                 frecuencia = frecuencia,
@@ -235,6 +245,7 @@ fun PantallaRecurrentes(
                                         cantidad = ""
                                         nota = ""
                                         esGasto = true
+                                        activo = true
                                         frecuencia = "MENSUAL"
                                         recurrenteEnEdicionId = null
                                     },
@@ -251,6 +262,7 @@ fun PantallaRecurrentes(
                                             cantidad = ""
                                             nota = ""
                                             esGasto = true
+                                            activo = true
                                             frecuencia = "MENSUAL"
                                             recurrenteEnEdicionId = null
                                         },
@@ -287,6 +299,7 @@ fun PantallaRecurrentes(
                                     cantidad = recurrente.cantidad.toString()
                                     nota = recurrente.nota
                                     esGasto = recurrente.esGasto
+                                    activo = recurrente.activo
                                     frecuencia = recurrente.frecuencia
                                     categoriaSeleccionada = estadoActual.categorias.find { it.id == recurrente.idCategoria }
                                     cuentaSeleccionada = estadoActual.cuentas.find { it.id == recurrente.idCuenta }
