@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ fun PantallaInicio(
     onNavegarPresupuestos: () -> Unit,
     onNavegarCuentas: () -> Unit,
     onNavegarRecurrentes: () -> Unit,
+    onNavegarDivisas: () -> Unit,
     onCerrarSesion: () -> Unit,
     emailUsuario: String,
     viewModel: InicioViewModel
@@ -138,6 +140,21 @@ fun PantallaInicio(
                             Icon(
                                 imageVector = Icons.Default.Repeat,
                                 contentDescription = "Recurrentes"
+                            )
+                        }
+                    )
+
+                    NavigationDrawerItem(
+                        label = { Text("Divisas") },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                            onNavegarDivisas()
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = "Divisas"
                             )
                         }
                     )

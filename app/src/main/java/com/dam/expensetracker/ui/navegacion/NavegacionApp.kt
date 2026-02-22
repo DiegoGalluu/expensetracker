@@ -13,6 +13,8 @@ import com.dam.expensetracker.ui.pantallas.detalle.DetalleViewModel
 import com.dam.expensetracker.ui.pantallas.detalle.PantallaDetalle
 import com.dam.expensetracker.ui.pantallas.cuentas.CuentasViewModel
 import com.dam.expensetracker.ui.pantallas.cuentas.PantallaCuentas
+import com.dam.expensetracker.ui.pantallas.divisas.DivisasViewModel
+import com.dam.expensetracker.ui.pantallas.divisas.PantallaDivisas
 import com.dam.expensetracker.ui.pantallas.formulario.FormularioViewModel
 import com.dam.expensetracker.ui.pantallas.formulario.PantallaFormulario
 import com.dam.expensetracker.ui.pantallas.inicio.InicioViewModel
@@ -34,6 +36,7 @@ sealed class Ruta(val ruta: String) {
     object Presupuestos : Ruta("presupuestos")
     object Cuentas : Ruta("cuentas")
     object Recurrentes : Ruta("recurrentes")
+    object Divisas : Ruta("divisas")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -96,6 +99,9 @@ fun NavegacionApp(
                 onNavegarRecurrentes = {
                     navController.navigate(Ruta.Recurrentes.ruta)
                 },
+                onNavegarDivisas = {
+                    navController.navigate(Ruta.Divisas.ruta)
+                },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
                         popUpTo(Ruta.Inicio.ruta) { inclusive = true }
@@ -155,6 +161,19 @@ fun NavegacionApp(
             )
 
             PantallaRecurrentes(
+                onNavegarAtras = { navController.popBackStack() },
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Divisas.ruta) {
+            val viewModel: DivisasViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    DivisasViewModel(repositorioDivisas)
+                }
+            )
+
+            PantallaDivisas(
                 onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )
