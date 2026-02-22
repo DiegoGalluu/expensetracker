@@ -8,6 +8,9 @@ object Constantes {
     // URL base de la API de tipos de cambio
     // Esta es una API pública gratuita, no requiere API key
     const val BASE_URL_API_DIVISAS = "https://api.exchangerate-api.com/v4/"
+
+    // URL base de API bancaria simulada (entorno de prueba)
+    const val BASE_URL_API_BANCARIA_SIMULADA = "https://dummyjson.com/"
     
     // Códigos de monedas más comunes
     const val MONEDA_EUR = "EUR"

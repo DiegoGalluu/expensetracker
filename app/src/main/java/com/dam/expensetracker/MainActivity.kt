@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.dam.expensetracker.datos.local.base.BaseDatosFinanzas
+import com.dam.expensetracker.datos.remoto.api.ApiBancariaSimulada
 import com.dam.expensetracker.datos.remoto.api.ApiDivisas
+import com.dam.expensetracker.datos.repositorios.RepositorioBancarioSimulado
 import com.dam.expensetracker.datos.repositorios.RepositorioDivisas
 import com.dam.expensetracker.datos.repositorios.RepositorioFinanzas
 import com.dam.expensetracker.ui.navegacion.NavegacionApp
@@ -24,6 +26,7 @@ class MainActivity : ComponentActivity() {
     // Repositorios
     private lateinit var repositorioFinanzas: RepositorioFinanzas
     private lateinit var repositorioDivisas: RepositorioDivisas
+    private lateinit var repositorioBancarioSimulado: RepositorioBancarioSimulado
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,12 +53,24 @@ class MainActivity : ComponentActivity() {
         
         // Inicializar repositorio de divisas
         repositorioDivisas = RepositorioDivisas(apiDivisas)
+
+        // Inicializar API bancaria simulada con Retrofit
+        val retrofitBancario = Retrofit.Builder()
+            .baseUrl(Constantes.BASE_URL_API_BANCARIA_SIMULADA)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val apiBancariaSimulada = retrofitBancario.create(ApiBancariaSimulada::class.java)
+
+        // Inicializar repositorio bancario simulado
+        repositorioBancarioSimulado = RepositorioBancarioSimulado(apiBancariaSimulada)
         
         setContent {
             TemaExpenseTracker {
                 NavegacionApp(
                     repositorioFinanzas = repositorioFinanzas,
-                    repositorioDivisas = repositorioDivisas
+                    repositorioDivisas = repositorioDivisas,
+                    repositorioBancarioSimulado = repositorioBancarioSimulado
                 )
             }
         }

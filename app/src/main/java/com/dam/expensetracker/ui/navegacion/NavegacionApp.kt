@@ -7,8 +7,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.dam.expensetracker.datos.repositorios.RepositorioBancarioSimulado
 import com.dam.expensetracker.datos.repositorios.RepositorioDivisas
 import com.dam.expensetracker.datos.repositorios.RepositorioFinanzas
+import com.dam.expensetracker.ui.pantallas.banco.BancoViewModel
+import com.dam.expensetracker.ui.pantallas.banco.PantallaBanco
 import com.dam.expensetracker.ui.pantallas.detalle.DetalleViewModel
 import com.dam.expensetracker.ui.pantallas.detalle.PantallaDetalle
 import com.dam.expensetracker.ui.pantallas.cuentas.CuentasViewModel
@@ -37,6 +40,7 @@ sealed class Ruta(val ruta: String) {
     object Cuentas : Ruta("cuentas")
     object Recurrentes : Ruta("recurrentes")
     object Divisas : Ruta("divisas")
+    object Banco : Ruta("banco")
     object Detalle : Ruta("detalle/{id}") {
         fun crearRuta(id: Long) = "detalle/$id"
     }
@@ -51,7 +55,8 @@ sealed class Ruta(val ruta: String) {
 @Composable
 fun NavegacionApp(
     repositorioFinanzas: RepositorioFinanzas,
-    repositorioDivisas: RepositorioDivisas
+    repositorioDivisas: RepositorioDivisas,
+    repositorioBancarioSimulado: RepositorioBancarioSimulado
 ) {
     val navController = rememberNavController()
     var emailUsuario by remember { mutableStateOf("") }
@@ -101,6 +106,9 @@ fun NavegacionApp(
                 },
                 onNavegarDivisas = {
                     navController.navigate(Ruta.Divisas.ruta)
+                },
+                onNavegarBanco = {
+                    navController.navigate(Ruta.Banco.ruta)
                 },
                 onCerrarSesion = {
                     navController.navigate(Ruta.Login.ruta) {
@@ -174,6 +182,19 @@ fun NavegacionApp(
             )
 
             PantallaDivisas(
+                onNavegarAtras = { navController.popBackStack() },
+                viewModel = viewModel
+            )
+        }
+
+        composable(Ruta.Banco.ruta) {
+            val viewModel: BancoViewModel = viewModel(
+                factory = GenericViewModelFactory {
+                    BancoViewModel(repositorioBancarioSimulado)
+                }
+            )
+
+            PantallaBanco(
                 onNavegarAtras = { navController.popBackStack() },
                 viewModel = viewModel
             )
